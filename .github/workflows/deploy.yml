@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    branches: ["master"]
   workflow_dispatch:
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
       - name: Build static site artifact
         run: |
           mkdir -p _site
-          cp -r client/* _site/
+          cp -r * _site/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
