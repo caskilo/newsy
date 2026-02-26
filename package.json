@@ -1,0 +1,37 @@
+{
+  "name": "newsy",
+  "version": "0.1.0",
+  "description": "A cognitive prosthetic for news consumption. Deterministic, client-resident RSS aggregation and filtration engine.",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "server": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "esbuild src/index.js --bundle --minify --outfile=dist/newsy.min.js --format=esm",
+    "lint": "eslint src/ server/"
+  },
+  "keywords": [
+    "rss",
+    "news",
+    "aggregation",
+    "cognitive",
+    "wellbeing",
+    "deterministic"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.1",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2",
+    "eslint": "^9.17.0",
+    "vitest": "^2.1.8"
+  }
+}

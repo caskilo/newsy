@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>newsy — sources</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="sources.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="header-content">
+        <h1><a href="/" class="nav-link">newsy</a></h1>
+        <p class="tagline">source management</p>
+      </div>
+      <div class="header-actions">
+        <button id="test-all-btn" class="btn btn-secondary" title="Test all feeds">test all</button>
+        <button id="add-source-btn" class="btn btn-primary" title="Add new source">+ add source</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="filter-group">
+        <select id="filter-category">
+          <option value="">all categories</option>
+        </select>
+        <select id="filter-status">
+          <option value="">all statuses</option>
+          <option value="enabled">enabled</option>
+          <option value="disabled">disabled</option>
+        </select>
+        <select id="filter-verdict">
+          <option value="">all verdicts</option>
+          <option value="pass">pass</option>
+          <option value="warn">warn</option>
+          <option value="fail">fail</option>
+          <option value="untested">untested</option>
+        </select>
+      </div>
+      <div class="source-stats">
+        <span id="stats-total"></span>
+        <span id="stats-enabled"></span>
+      </div>
+    </div>
+
+    <!-- Add / Test URL panel (hidden by default) -->
+    <div id="add-panel" class="panel hidden">
+      <h3>Add New Source</h3>
+      <div class="form-row">
+        <input id="add-name" type="text" placeholder="Source name" class="input">
+        <input id="add-url" type="text" placeholder="RSS feed URL" class="input input-wide">
+      </div>
+      <div class="form-row">
+        <select id="add-category" class="input">
+          <option value="news">news</option>
+        </select>
+        <input id="add-country" type="text" placeholder="Country (e.g. us, uk)" class="input" value="international">
+        <input id="add-language" type="text" placeholder="Language (e.g. en)" class="input" value="en">
+      </div>
+      <div class="form-row">
+        <button id="test-url-btn" class="btn btn-secondary">test URL first</button>
+        <button id="confirm-add-btn" class="btn btn-primary">add source</button>
+        <button id="cancel-add-btn" class="btn btn-ghost">cancel</button>
+      </div>
+      <div id="url-test-result" class="test-result hidden"></div>
+    </div>
+
+    <main id="sources-container">
+      <div id="loading" class="status-message"><p>Loading sources...</p></div>
+    </main>
+  </div>
+
+  <script src="sources.js"></script>
+</body>
+</html>
