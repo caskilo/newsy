@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Newsy</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="api-config.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Newsy</h1>
+    <div id="brief-meta" class="brief-meta hidden">
+      <span id="meta-count"></span>
+      <span id="meta-time"></span>
+      <span id="meta-emotional"></span>
+      <span id="meta-mode"></span>
+    </div>
+  </header>
+
+  <div id="filter-bar" class="filter-bar hidden">
+    <input id="page-search" type="text" class="page-search" placeholder="search articles..." autocomplete="off">
+    <select id="filter-country" class="filter-select"></select>
+    <select id="filter-domain" class="filter-select"></select>
+    <select id="filter-register" class="filter-select"></select>
+    <div id="active-filters" class="active-filters"></div>
+  </div>
+
+  <main>
+    <div id="loading" class="loading hidden">Loading brief...</div>
+    <div id="error" class="error hidden"></div>
+    <div id="empty" class="empty hidden">No articles available.</div>
+    <div id="articles-container"></div>
+  </main>
+
+  <footer>
+    <button id="refresh-btn" class="refresh-btn">↻ Refresh</button>
+    <button id="drag-toggle" class="drag-toggle">⋮⋮ Drag Mode</button>
+  </footer>
+
+  <!-- Grouping sidebar -->
+  <aside id="group-sidebar" class="group-sidebar hidden">
+    <div class="sidebar-header">
+      <h3>Group article with...</h3>
+      <button id="sidebar-close" class="sidebar-close">×</button>
+    </div>
+    <div id="sidebar-groups" class="sidebar-groups"></div>
+    <button id="sidebar-new-group" class="sidebar-new-group">+ New Group</button>
+  </aside>
+
+  <!-- Drag overlay -->
+  <div id="drag-overlay" class="drag-overlay hidden"></div>
+
+  <!-- Reader modal -->
+  <div id="reader-modal" class="reader-modal hidden">
+    <div class="reader-backdrop"></div>
+    <div class="reader-content">
+      <div class="reader-header">
+        <h2 id="reader-title"></h2>
+        <button id="reader-close" class="reader-close">×</button>
+      </div>
+      <div class="reader-meta">
+        <span id="reader-source"></span>
+        <span id="reader-time"></span>
+        <span id="reader-read-time"></span>
+      </div>
+      <div id="reader-tags" class="reader-tags"></div>
+      <div id="reader-body" class="reader-body"></div>
+      <div class="reader-footer">
+        <a id="reader-link" class="reader-link" target="_blank" rel="noopener">Read original</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
