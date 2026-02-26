@@ -1,5 +1,23 @@
 node_modules/
 .DS_Store
-.vscode/
-.idea/
-.windsurf/
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.github/.keep
+data/sources.local.json
+
+# Build artifacts
+/dist/
+/build/
+_site/
+
+# Local config overrides
+.env
+.env.*
+!.env.example
+
+# Cache files
+/.cache/
+/.parcel-cache/

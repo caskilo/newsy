@@ -32,7 +32,7 @@ const elements = {
   metaTime: $('#meta-time'),
   metaEmotional: $('#meta-emotional'),
   metaMode: $('#meta-mode'),
-  footer: $('footer'),
+  footer: $('#footer'),
   refreshBtn: $('#refresh-btn'),
   filterBar: $('#filter-bar'),
   activeFilters: $('#active-filters'),
