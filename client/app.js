@@ -5,7 +5,7 @@
  * Supports drag-to-group manual curation with reinforcement learning.
  */
 
-const API_BASE = window.location.origin;
+const API_BASE = window.NEWSY_API_BASE || window.location.origin;
 
 const $ = (sel) => document.querySelector(sel);
 const show = (el) => el.classList.remove('hidden');
