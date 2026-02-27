@@ -2,7 +2,7 @@
  * Newsy Sources Manager — client-side logic for source management UI.
  */
 
-const API = window.location.origin;
+const API = window.NEWSY_API_BASE || window.location.origin;
 const $ = (sel) => document.querySelector(sel);
 const show = (el) => el.classList.remove('hidden');
 const hide = (el) => el.classList.add('hidden');
