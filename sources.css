@@ -95,7 +95,7 @@
 }
 
 #add-source-btn {
-  padding: 6px 12px;
+  padding: 6px 22px;
   font-size: 0.75rem;
   line-height: 1;
 }
@@ -498,8 +498,130 @@
   margin-left: auto;
 }
 
+/* Action row in add panel */
+.form-row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-add-confirm {
+  flex: 2;
+}
+
+.form-row-actions .btn:not(.btn-add-confirm) {
+  flex: 1;
+}
+
 @media (max-width: 600px) {
-  .source-card { flex-wrap: wrap; }
-  .toolbar { flex-direction: column; align-items: flex-start; }
+  /* Toolbar: two rows — filters on top, stats+add below */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .filter-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .filter-group select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .source-stats {
+    
+    justify-content: space-between;
+    width: 100%;
+    padding: 0px 10px;
+  }
+
+  /* Config bar: name full-width, then buttons in a row, ? bottom-right */
+  .config-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 14px;
+  }
+
+  .config-name-input {
+    width: 100%;
+    margin-right: 0;
+    font-size: 0.85rem;
+    padding: 6px 8px;
+    flex: unset;
+  }
+
+  .config-bar .btn-sm {
+    flex: 1;
+    text-align: center;
+    padding: 7px 8px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .config-info-wrap {
+    margin-left: auto;
+  }
+
+  .config-tooltip {
+    right: 0;
+    left: auto;
+    width: min(260px, 85vw);
+  }
+
+  /* Add panel: keep 3-row structure, stack each row's inputs */
+  .panel {
+    padding: 12px 14px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .input, .input-wide {
+    width: 100%;
+    flex: unset;
+  }
+
+  /* Action row stays horizontal on mobile */
+  .form-row-actions {
+    flex-direction: row;
+  }
+
+  /* Source cards */
+  .source-card {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .source-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  /* Diff modal footer */
+  .diff-modal-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .diff-mode-toggle {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .diff-footer-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .diff-footer-actions .btn {
+    flex: 1;
+  }
+
   .header-actions { flex-wrap: wrap; }
 }
