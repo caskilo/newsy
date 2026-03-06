@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="api-base" content="__APIBASE__">
+  <title>newsy — sources</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="sources.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="header-content">
+        <h1><a href="./" class="nav-link">newsy</a></h1>
+        <p class="tagline">source management</p>
+      </div>
+      <div class="header-actions"></div>
+    </header>
+
+    <div class="toolbar">
+      <div class="filter-group">
+        <select id="filter-category">
+          <option value="">all categories</option>
+        </select>
+        <select id="filter-status">
+          <option value="">all statuses</option>
+          <option value="enabled">enabled</option>
+          <option value="disabled">disabled</option>
+        </select>
+        <select id="filter-verdict">
+          <option value="">all verdicts</option>
+          <option value="pass">pass</option>
+          <option value="warn">warn</option>
+          <option value="fail">fail</option>
+          <option value="untested">untested</option>
+        </select>
+      </div>
+      <div class="source-stats">
+        <span id="stats-total"></span>
+        <span id="stats-enabled"></span>
+        <button id="add-source-btn" class="btn btn-primary" title="Add new source">+ add source</button>
+      </div>
+    </div>
+
+    <div class="config-bar">
+      <input id="config-name" class="config-name-input" placeholder="config name" title="Click to rename">
+      <button id="config-set-default" class="btn btn-sm btn-ghost" title="Reset to default sources">&#8635; set default</button>
+      <button id="config-download" class="btn btn-sm btn-secondary" title="Download source config">&#8681; save config</button>
+      <button id="config-upload" class="btn btn-sm btn-secondary" title="Load source config from file">&#8679; load config</button>
+      <input id="config-file" type="file" accept=".json" class="hidden">
+      <span class="config-info-wrap">
+        <button class="config-info-btn" aria-label="About your sources config">?</button>
+        <span class="config-tooltip">Sources are kept in your browser's memory. They'll disappear if you clear your cache — download a copy to keep them safe.</span>
+      </span>
+    </div>
+
+    <!-- Add / Test URL panel (hidden by default) -->
+    <div id="add-panel" class="panel hidden">
+      <h3>Add New Source</h3>
+      <div class="form-row">
+        <input id="add-name" type="text" placeholder="Source name" class="input">
+        <input id="add-url" type="text" placeholder="RSS feed URL" class="input input-wide">
+      </div>
+      <div class="form-row">
+        <select id="add-category" class="input"></select>
+        <input id="add-country" type="text" placeholder="Country (e.g. us, uk)" class="input" value="international">
+      </div>
+      <div class="form-row">
+        <button id="test-url-btn" class="btn btn-secondary">test URL first</button>
+        <button id="confirm-add-btn" class="btn btn-primary">add source</button>
+        <button id="cancel-add-btn" class="btn btn-ghost">cancel</button>
+      </div>
+      <div id="url-test-result" class="test-result hidden"></div>
+    </div>
+
+    <main id="sources-container">
+      <div id="loading" class="status-message"><p>Loading sources...</p></div>
+    </main>
+  </div>
+
+  <!-- Diff modal -->
+  <div id="diff-modal" class="diff-modal-backdrop hidden">
+    <div class="diff-modal">
+      <div class="diff-modal-header">
+        <h2 id="diff-modal-title" class="diff-modal-title">Config diff</h2>
+        <button id="diff-modal-close" class="btn-ghost diff-close">&times;</button>
+      </div>
+      <div id="diff-modal-body" class="diff-modal-body"></div>
+      <div id="diff-modal-footer" class="diff-modal-footer hidden">
+        <div id="diff-mode-toggle" class="diff-mode-toggle hidden">
+          <label>
+            <input type="radio" name="diff-mode" value="replace" checked>
+            replace (overwrite)
+          </label>
+          <label>
+            <input type="radio" name="diff-mode" value="preserve">
+            preserve (keep current)
+          </label>
+        </div>
+        <div class="diff-footer-actions">
+          <button id="diff-confirm" class="btn btn-primary">apply changes</button>
+          <button id="diff-cancel" class="btn btn-ghost">cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="api-config.js"></script>
+  <script src="idb.js"></script>
+  <script src="sources.default.js"></script>
+  <script src="sources.js"></script>
+</body>
+</html>
