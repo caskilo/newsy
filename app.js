@@ -18,10 +18,13 @@ let allItems = [];       // unified: groups + standalone articles, each with .it
 const defaultFlagFilter = { type: 'flagged', value: 'flagged', label: 'flagged posts', mode: 'exclude', auto: true };
 let activeFilters = [defaultFlagFilter];  // filters with include/exclude mode
 let searchQuery = '';
+let ageFilterMs = 86400000; // default: 1 day
 let manualGroups = [];   // client-side manual groups
 let dragArticleId = null;
 let dragModeActive = false;
 let excludePreviewActive = false;
+let excludeToggleLocked = false; // true when toggled via button (not keyboard)
+let filterSummaryExpanded = false;
 
 const elements = {
   loading: $('#loading'),
@@ -37,10 +40,14 @@ const elements = {
   briefAge: $('#brief-age'),
   filterBar: $('#filter-bar'),
   activeFilters: $('#active-filters'),
+  activeFiltersWrap: $('#active-filters-wrap'),
+  filterAge: $('#filter-age'),
   filterCountry: $('#filter-country'),
   filterDomain: $('#filter-domain'),
   filterRegister: $('#filter-register'),
   pageSearch: $('#page-search'),
+  excludeToggleBtn: $('#exclude-toggle'),
+  filtersSummaryToggle: $('#filters-summary-toggle'),
   sidebar: $('#group-sidebar'),
   sidebarGroups: $('#sidebar-groups'),
   sidebarClose: $('#sidebar-close'),
@@ -193,7 +200,8 @@ function renderBrief(brief) {
     for (const group of groups) {
       const el = createGroupCard(group);
       const flagged = group.sources.some(s => (s.contentFlags || []).length > 0);
-      setFilterData(el, group.domain, group.register, group.countryCode, group.headline + ' ' + group.sources.map(s => s.title).join(' '), flagged);
+      const groupPub = group.publishedRange?.latest || group.representative?.publishedAt || 0;
+      setFilterData(el, group.domain, group.register, group.countryCode, group.headline + ' ' + group.sources.map(s => s.title).join(' '), flagged, groupPub);
       grid.appendChild(el);
       allItems.push({ type: 'group', data: group, el });
     }
@@ -203,8 +211,11 @@ function renderBrief(brief) {
   // Render standalone articles
   for (const article of articles) {
     const el = createArticleCard(article);
-    const flagged = (article.contentFlags || []).length > 0;
-    setFilterData(el, article.domain, article.register, article.countryCode, article.title + ' ' + (article.summary || '') + ' ' + (article.sourceName || ''), flagged);
+    // Auto-flag extreme intensity articles (intensity < -1.0)
+    const autoIntensity = computeIntensity(article.emotionalScore, article.arousalScore);
+    const intensityFlagged = autoIntensity !== null && autoIntensity < -1.0;
+    const flagged = (article.contentFlags || []).length > 0 || intensityFlagged;
+    setFilterData(el, article.domain, article.register, article.countryCode, article.title + ' ' + (article.summary || '') + ' ' + (article.sourceName || ''), flagged, article.publishedAt || 0);
     el.draggable = false;  // draggable only when drag mode is active
     el.dataset.articleId = article.id;
     elements.container.appendChild(el);
@@ -218,12 +229,13 @@ function renderBrief(brief) {
   show(elements.footer);
 }
 
-function setFilterData(el, domain, register, country, searchableText, flagged = false) {
+function setFilterData(el, domain, register, country, searchableText, flagged = false, publishedAt = 0) {
   el.dataset.domain = domain || '';
   el.dataset.register = register || '';
   el.dataset.country = country || '';
   el.dataset.searchText = (searchableText || '').toLowerCase();
   el.dataset.flagged = flagged ? 'flagged' : '';
+  el.dataset.publishedAt = publishedAt || 0;
 }
 
 // ─── Group card ───
@@ -256,20 +268,12 @@ function createGroupCard(group) {
   for (const s of group.sources) {
     const row = document.createElement('div');
     row.className = 'group-article-row';
-    const intensity = s.intensityScore || 0;
-    let chipTone = '', chipColor = '';
-    if (intensity > 0) {
-      if (intensity < 0.2)       { chipTone = 'calm';     chipColor = 'var(--positive)'; }
-      else if (intensity < 0.4)  { chipTone = 'measured'; chipColor = 'var(--accent)'; }
-      else if (intensity < 0.65) { chipTone = 'tense';    chipColor = 'var(--warning)'; }
-      else                       { chipTone = 'heavy';    chipColor = 'var(--negative)'; }
-    }
-    const intensityChip = intensity > 0
-      ? `<span class="ga-intensity" style="color:${chipColor}" title="intensity: ${Math.round(intensity * 100)}%">${chipTone}</span>`
-      : '';
+    const chip = intensityChipHtml(s.emotionalScore, s.arousalScore, 'ga-intensity-chip');
+    const gaTimeAgo = s.publishedAt ? formatTimeAgo(s.publishedAt) : '';
     row.innerHTML = `
       <div class="ga-source-block">
-        <span class="ga-source">${esc(s.sourceName)}</span>${intensityChip}
+        <span class="ga-source">${esc(s.sourceName)}</span>
+        <div class="ga-source-meta">${chip}${gaTimeAgo ? `<span class="ga-time">${gaTimeAgo}</span>` : ''}</div>
       </div>
       <span class="ga-title" data-article-id="${esc(s.articleId)}" data-link="${esc(s.link)}">${esc(s.title)}</span>
     `;
@@ -286,19 +290,8 @@ function createArticleCard(article) {
   const card = document.createElement('div');
   card.className = 'article-card';
 
-  const arousalClass = article.arousalScore > 0.6 ? 'arousal-high'
-    : article.arousalScore > 0.3 ? 'arousal-mid'
-    : 'arousal-low';
-
-  const sentimentClass = article.emotionalScore > 0.1 ? 'sentiment-positive'
-    : article.emotionalScore < -0.1 ? 'sentiment-negative'
-    : 'sentiment-neutral';
-
-  const sentimentLabel = article.emotionalScore > 0.1 ? '+'
-    : article.emotionalScore < -0.1 ? '−'
-    : '·';
-
   const timeAgo = formatTimeAgo(article.publishedAt);
+  const chip = intensityChipHtml(article.emotionalScore, article.arousalScore);
 
   const domainHtml = article.domain ? `<span class="domain-tag domain-${article.domain}">${article.domain}</span>` : '';
   const registerHtml = article.register ? `<span class="register-tag register-${article.register}">${article.register}</span>` : '';
@@ -308,21 +301,14 @@ function createArticleCard(article) {
 
   card.innerHTML = `
     <div class="article-header">
-      <span class="article-title" data-article-id="${esc(article.id)}">
-        ${esc(article.title)}
-      </span>
-      <div class="arousal-pip ${arousalClass}" title="arousal: ${(article.arousalScore || 0).toFixed(2)}"></div>
+      <span class="article-title" data-article-id="${esc(article.id)}">${esc(article.title)}</span>
+      ${chip}
     </div>
     ${article.summary ? `<div class="article-summary">${esc(article.summary)}</div>` : ''}
     <div class="article-meta">
       <span class="source">${esc(article.sourceName || article.sourceId)}</span>
-      <span>${article.readTimeMin} min</span>
-      <span>${timeAgo}</span>
-      <span class="sentiment ${sentimentClass}">${sentimentLabel} ${(article.emotionalScore || 0).toFixed(2)}</span>
-    </div>
-    <div class="article-classification">
-      ${flagsHtml}
-      ${countryHtml}${domainHtml}${registerHtml}
+      <span class="meta-time">${timeAgo}</span>
+      <span class="article-tags">${flagsHtml}${countryHtml}${domainHtml}${registerHtml}</span>
     </div>
   `;
 
@@ -340,6 +326,35 @@ function formatTimeAgo(epochMs) {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+// ─── Composite intensity ───
+// intensity = emotionalScore − arousalScore
+// Range: roughly [-2, 1]. Values below -1.0 are auto-flagged.
+
+function computeIntensity(emotionalScore, arousalScore) {
+  const e = emotionalScore || 0;
+  const a = arousalScore || 0;
+  if (e === 0 && a === 0) return null; // no scoring data
+  return Math.round((e - a) * 100) / 100;
+}
+
+function intensityColor(v) {
+  if (v === null) return 'var(--text-dim)';
+  if (v < -0.5)  return 'var(--negative)';
+  if (v < 0)     return '#f0883e';
+  if (v < 0.5)   return 'var(--warning)';
+  if (v < 0.85)  return 'var(--text-dim)';
+  return 'var(--positive)';
+}
+
+function intensityChipHtml(emotionalScore, arousalScore, extraClass = '') {
+  const v = computeIntensity(emotionalScore, arousalScore);
+  if (v === null) return '';
+  const color = intensityColor(v);
+  const label = `${v > 0 ? '+' : ''}${v.toFixed(2)}`;
+  const tip = `intensity: ${label} (sentiment ${(emotionalScore || 0).toFixed(2)}, arousal ${(arousalScore || 0).toFixed(2)})`;
+  return `<span class="intensity-chip${extraClass ? ' ' + extraClass : ''}" style="color:${color}" title="${tip}">${label}</span>`;
+}
+
 function esc(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -353,6 +368,9 @@ function collectValues(field) {
     const d = item.data;
     const v = field === 'country' ? d.countryCode : d[field];
     if (v) vals.add(v);
+    if (field === 'register' && item.el?.dataset.flagged === 'flagged') {
+      vals.add('flagged');
+    }
     // Also collect from group sources' representative
     if (item.type === 'group' && d.representative) {
       const rv = field === 'country' ? d.representative.countryCode : d.representative[field];
@@ -445,6 +463,20 @@ function renderFilterChips() {
     chip.innerHTML = `${esc(f.label || f.value)} <span class="remove-filter" data-type="${f.type}" data-value="${esc(f.value)}" data-mode="${f.mode}">&times;</span>`;
     elements.activeFilters.appendChild(chip);
   }
+  updateFilterSummaryVisibility();
+}
+
+function updateFilterSummaryVisibility() {
+  const visibleFilters = activeFilters;
+  const hasVisibleFilters = visibleFilters.length > 0;
+  if (elements.filtersSummaryToggle) {
+    elements.filtersSummaryToggle.classList.toggle('has-filters', hasVisibleFilters);
+    elements.filtersSummaryToggle.textContent = hasVisibleFilters ? `filters (${visibleFilters.length})` : 'filters';
+    elements.filtersSummaryToggle.setAttribute('aria-expanded', filterSummaryExpanded ? 'true' : 'false');
+  }
+  if (elements.activeFiltersWrap) {
+    elements.activeFiltersWrap.classList.toggle('hidden', !filterSummaryExpanded || !hasVisibleFilters);
+  }
 }
 
 function renderIntensityMeter(visibleItems) {
@@ -492,7 +524,8 @@ function applyFilters() {
     }
   }
 
-  const hasFilters = activeFilters.length > 0 || searchQuery.length > 0;
+  const now = Date.now();
+  const hasFilters = activeFilters.length > 0 || searchQuery.length > 0 || ageFilterMs > 0;
   let visibleCount = 0;
   const visibleItems = [];
 
@@ -507,6 +540,11 @@ function applyFilters() {
     if (excludeByType.domain.length > 0 && excludeByType.domain.includes(el.dataset.domain)) visible = false;
     if (excludeByType.register.length > 0 && excludeByType.register.includes(el.dataset.register)) visible = false;
     if (excludeByType.flagged.length > 0 && el.dataset.flagged === 'flagged') visible = false;
+
+    if (visible && ageFilterMs > 0) {
+      const pub = parseInt(el.dataset.publishedAt, 10);
+      if (pub && (now - pub) > ageFilterMs) visible = false;
+    }
 
     if (visible && searchQuery.length > 0) {
       visible = el.dataset.searchText.includes(searchQuery);
@@ -550,6 +588,14 @@ for (const [type, el] of [['country', elements.filterCountry], ['domain', elemen
   });
 }
 
+if (elements.filterAge) {
+  elements.filterAge.addEventListener('change', () => {
+    ageFilterMs = elements.filterAge.value ? parseInt(elements.filterAge.value, 10) : 0;
+    applyFilters();
+    saveFilterState();
+  });
+}
+
 let searchTimeout;
 elements.pageSearch.addEventListener('input', () => {
   clearTimeout(searchTimeout);
@@ -566,14 +612,27 @@ elements.activeFilters.addEventListener('click', (e) => {
   removeFilter(btn.dataset.type, btn.dataset.value, btn.dataset.mode);
 });
 
+if (elements.filtersSummaryToggle) {
+  elements.filtersSummaryToggle.addEventListener('click', () => {
+    filterSummaryExpanded = !filterSummaryExpanded;
+    updateFilterSummaryVisibility();
+  });
+}
+
 function setExcludePreview(active) {
   if (excludePreviewActive === active) return;
   excludePreviewActive = active;
+  if (elements.excludeToggleBtn) {
+    elements.excludeToggleBtn.classList.toggle('active', active);
+    elements.excludeToggleBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    elements.excludeToggleBtn.title = active ? 'Exclude mode ON (click or release Ctrl/⌘ to disable)' : 'Toggle exclude mode (Ctrl/⌘)';
+  }
   updateDropdownOptionLabels();
   updateAllSelectHighlights();
 }
 
 function syncExcludePreviewFromEvent(e) {
+  if (excludeToggleLocked) return;
   setExcludePreview(Boolean(e?.ctrlKey || e?.metaKey));
 }
 
@@ -581,13 +640,22 @@ document.addEventListener('keydown', syncExcludePreviewFromEvent);
 document.addEventListener('keyup', syncExcludePreviewFromEvent);
 document.addEventListener('pointerdown', syncExcludePreviewFromEvent);
 
-window.addEventListener('blur', () => setExcludePreview(false));
-window.addEventListener('focus', () => setExcludePreview(false));
+window.addEventListener('blur', () => { if (!excludeToggleLocked) setExcludePreview(false); });
+window.addEventListener('focus', () => { if (!excludeToggleLocked) setExcludePreview(false); });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState !== 'visible') {
+  if (document.visibilityState !== 'visible' && !excludeToggleLocked) {
     setExcludePreview(false);
   }
 });
+
+if (elements.excludeToggleBtn) {
+  elements.excludeToggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const next = !excludePreviewActive;
+    excludeToggleLocked = next; // locked = true means button is holding it on
+    setExcludePreview(next);
+  });
+}
 
 // ─── Drag-to-Group ───
 
@@ -994,7 +1062,7 @@ async function saveFilterState() {
   try {
     await idb.open();
     const nonAuto = activeFilters.filter(f => !f.auto);
-    await idb.setMeta('filterState', { filters: nonAuto, searchQuery });
+    await idb.setMeta('filterState', { filters: nonAuto, searchQuery, ageFilterMs });
   } catch (e) {
     console.warn('[filters] Could not save filter state', e);
   }
@@ -1016,6 +1084,12 @@ async function restoreFilterState() {
     if (saved.searchQuery) {
       searchQuery = saved.searchQuery;
       elements.pageSearch.value = saved.searchQuery;
+    }
+    if (saved.ageFilterMs !== undefined) {
+      ageFilterMs = saved.ageFilterMs;
+      if (elements.filterAge) {
+        elements.filterAge.value = ageFilterMs > 0 ? String(ageFilterMs) : '';
+      }
     }
   } catch (e) {
     console.warn('[filters] Could not restore filter state', e);
