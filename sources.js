@@ -119,23 +119,31 @@ function createSourceCard(source) {
   const testDetail = source.lastTestResult ? formatTestDetail(source.lastTestResult) : '';
 
   card.innerHTML = `
-    <button class="source-toggle ${source.enabled ? 'on' : ''}" 
+    <button class="source-toggle ${source.enabled ? 'on' : ''}"
             data-action="toggle" data-id="${source.id}"
             title="${source.enabled ? 'Disable' : 'Enable'}"></button>
-    <div class="source-info">
-      <div class="source-name">${esc(source.name)}</div>
-      <div class="source-url" title="${esc(source.rssUrl)}">${esc(source.rssUrl)}</div>
-      <div class="source-tags">
-        <span class="tag tag-category">${source.category || 'news'}</span>
-        <span class="tag tag-country">${source.country || '?'}</span>
-        <span class="tag tag-language">${source.language || 'en'}</span>
+    <div class="source-body">
+      <div class="source-main-row">
+        <div class="source-title-wrap">
+          <div class="source-name">${esc(source.name)}</div>
+        </div>
+        <div class="source-side-controls">
+          <span class="verdict-badge verdict-${verdict}">${verdict}</span>
+          <div class="source-actions">
+            <button class="btn btn-sm btn-secondary" data-action="test" data-id="${source.id}" title="Test feed">test</button>
+            <button class="btn btn-sm btn-ghost btn-icon-danger" data-action="delete" data-id="${source.id}" title="Remove source" aria-label="Remove source">🗑</button>
+          </div>
+        </div>
       </div>
-      ${testDetail ? `<div class="test-detail">${testDetail}</div>` : ''}
-    </div>
-    <span class="verdict-badge verdict-${verdict}">${verdict}</span>
-    <div class="source-actions">
-      <button class="btn btn-sm btn-secondary" data-action="test" data-id="${source.id}" title="Test feed">test</button>
-      <button class="btn btn-sm btn-ghost" data-action="delete" data-id="${source.id}" title="Remove source">✕</button>
+      <div class="source-meta-block">
+        <div class="source-url" title="${esc(source.rssUrl)}">${esc(source.rssUrl)}</div>
+        <div class="source-tags">
+          <span class="tag tag-category">${source.category || 'news'}</span>
+          <span class="tag tag-country">${source.country || '?'}</span>
+          <span class="tag tag-language">${source.language || 'en'}</span>
+        </div>
+        ${testDetail ? `<div class="test-detail">${testDetail}</div>` : ''}
+      </div>
     </div>
   `;
 

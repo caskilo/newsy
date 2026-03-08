@@ -15,7 +15,7 @@ const hide = (el) => el.classList.add('hidden');
 // --- State ---
 let currentBrief = null;
 let allItems = [];       // unified: groups + standalone articles, each with .itemType
-const defaultFlagFilter = { type: 'flagged', value: 'flagged', label: 'flagged posts', mode: 'exclude', auto: true };
+const defaultFlagFilter = { type: 'register', value: 'flagged', label: 'not flagged', mode: 'exclude', auto: true };
 let activeFilters = [defaultFlagFilter];  // filters with include/exclude mode
 let searchQuery = '';
 let ageFilterMs = 86400000; // default: 1 day
@@ -199,7 +199,11 @@ function renderBrief(brief) {
     grid.className = 'groups-grid';
     for (const group of groups) {
       const el = createGroupCard(group);
-      const flagged = group.sources.some(s => (s.contentFlags || []).length > 0);
+      const flagged = group.sources.some(s => {
+        const sourceIntensity = computeIntensity(s.emotionalScore, s.arousalScore);
+        const sourceIntensityFlagged = sourceIntensity !== null && sourceIntensity < -1.0;
+        return (s.contentFlags || []).length > 0 || sourceIntensityFlagged;
+      });
       const groupPub = group.publishedRange?.latest || group.representative?.publishedAt || 0;
       setFilterData(el, group.domain, group.register, group.countryCode, group.headline + ' ' + group.sources.map(s => s.title).join(' '), flagged, groupPub);
       grid.appendChild(el);
@@ -229,9 +233,13 @@ function renderBrief(brief) {
   show(elements.footer);
 }
 
+function effectiveRegister(register, flagged) {
+  return flagged ? 'flagged' : (register || '');
+}
+
 function setFilterData(el, domain, register, country, searchableText, flagged = false, publishedAt = 0) {
   el.dataset.domain = domain || '';
-  el.dataset.register = register || '';
+  el.dataset.register = effectiveRegister(register, flagged);
   el.dataset.country = country || '';
   el.dataset.searchText = (searchableText || '').toLowerCase();
   el.dataset.flagged = flagged ? 'flagged' : '';
@@ -292,12 +300,19 @@ function createArticleCard(article) {
 
   const timeAgo = formatTimeAgo(article.publishedAt);
   const chip = intensityChipHtml(article.emotionalScore, article.arousalScore);
+  const autoIntensity = computeIntensity(article.emotionalScore, article.arousalScore);
+  const flagged = (article.contentFlags || []).length > 0 || (autoIntensity !== null && autoIntensity < -1.0);
 
   const domainHtml = article.domain ? `<span class="domain-tag domain-${article.domain}">${article.domain}</span>` : '';
-  const registerHtml = article.register ? `<span class="register-tag register-${article.register}">${article.register}</span>` : '';
+  const effectiveRegisterValue = effectiveRegister(article.register, flagged);
+  const registerHtml = effectiveRegisterValue ? `<span class="register-tag register-${effectiveRegisterValue}">${effectiveRegisterValue}</span>` : '';
   const countryHtml = article.countryCode ? `<span class="country-tag">${article.countryCode}</span>` : '';
-  const flagsHtml = (article.contentFlags || []).length > 0
-    ? `<span class="flag-tag" title="${esc(article.contentFlags.join(', '))}">flagged</span>` : '';
+  const flagReasons = [...(article.contentFlags || [])];
+  if (autoIntensity !== null && autoIntensity < -1.0) {
+    flagReasons.push('intensity below -1.0');
+  }
+  const flagsHtml = flagged
+    ? `<span class="flag-tag" title="${esc(flagReasons.join(', '))}">flagged</span>` : '';
 
   card.innerHTML = `
     <div class="article-header">
@@ -368,7 +383,7 @@ function collectValues(field) {
     const d = item.data;
     const v = field === 'country' ? d.countryCode : d[field];
     if (v) vals.add(v);
-    if (field === 'register' && item.el?.dataset.flagged === 'flagged') {
+    if (field === 'register' && item.el?.dataset.register === 'flagged') {
       vals.add('flagged');
     }
     // Also collect from group sources' representative
@@ -515,7 +530,7 @@ function renderIntensityMeter(visibleItems) {
 function applyFilters() {
   const items = elements.container.querySelectorAll('.story-group, .article-card');
   const includeByType = { country: [], domain: [], register: [] };
-  const excludeByType = { country: [], domain: [], register: [], flagged: [] };
+  const excludeByType = { country: [], domain: [], register: [] };
   for (const f of activeFilters) {
     if (f.mode === 'exclude') {
       excludeByType[f.type]?.push(f.value);
@@ -539,7 +554,6 @@ function applyFilters() {
     if (excludeByType.country.length > 0 && excludeByType.country.includes(el.dataset.country)) visible = false;
     if (excludeByType.domain.length > 0 && excludeByType.domain.includes(el.dataset.domain)) visible = false;
     if (excludeByType.register.length > 0 && excludeByType.register.includes(el.dataset.register)) visible = false;
-    if (excludeByType.flagged.length > 0 && el.dataset.flagged === 'flagged') visible = false;
 
     if (visible && ageFilterMs > 0) {
       const pub = parseInt(el.dataset.publishedAt, 10);

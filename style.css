@@ -570,9 +570,8 @@ footer p {
 
 /* Groups grid container */
 .groups-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  column-count: 2;
+  column-gap: 10px;
   margin-bottom: 16px;
 }
 
@@ -583,7 +582,7 @@ footer p {
   border-top: 3px solid var(--accent);
   border-radius: var(--radius);
   padding: 12px 14px;
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
   min-height: 100px;
   cursor: pointer;
@@ -591,6 +590,11 @@ footer p {
   /* Prevent card from growing horizontally when expanded */
   min-width: 0;
   overflow: hidden;
+  width: 100%;
+  margin: 0 0 10px;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 .story-group:hover {
@@ -1030,7 +1034,10 @@ footer p {
     flex: 1 1 calc(25% - 6px);
     margin-left: 0;
   }
-  .groups-grid { grid-template-columns: 1fr; }
+  .groups-grid {
+    column-count: 1;
+    column-gap: 0;
+  }
   .group-sidebar { width: 260px; }
   .reader-panel { width: 98vw; max-height: 95vh; border-radius: 8px; }
 }
