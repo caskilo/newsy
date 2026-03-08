@@ -20,26 +20,6 @@ const SOURCE_CATEGORIES = [
 
 const DEFAULT_SOURCES = [
   {
-    id: 'bbc-world',
-    name: 'BBC News - World',
-    rssUrl: 'https://feeds.bbci.co.uk/news/world/rss.xml',
-    enabled: true,
-    fetchIntervalMin: 30,
-    country: 'uk',
-    category: 'news',
-    language: 'en',
-  },
-  {
-    id: 'guardian-world',
-    name: 'The Guardian - World',
-    rssUrl: 'https://www.theguardian.com/world/rss',
-    enabled: true,
-    fetchIntervalMin: 30,
-    country: 'uk',
-    category: 'news',
-    language: 'en',
-  },
-  {
     id: 'npr-news',
     name: 'NPR News',
     rssUrl: 'https://feeds.npr.org/1001/rss.xml',
@@ -56,16 +36,6 @@ const DEFAULT_SOURCES = [
     enabled: true,
     fetchIntervalMin: 30,
     country: 'international',
-    category: 'news',
-    language: 'en',
-  },
-  {
-    id: 'nyt-world',
-    name: 'New York Times - World',
-    rssUrl: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
-    enabled: true,
-    fetchIntervalMin: 30,
-    country: 'us',
     category: 'news',
     language: 'en',
   },

@@ -233,13 +233,9 @@ function renderBrief(brief) {
   show(elements.footer);
 }
 
-function effectiveRegister(register, flagged) {
-  return flagged ? 'flagged' : (register || '');
-}
-
 function setFilterData(el, domain, register, country, searchableText, flagged = false, publishedAt = 0) {
   el.dataset.domain = domain || '';
-  el.dataset.register = effectiveRegister(register, flagged);
+  el.dataset.register = register || '';
   el.dataset.country = country || '';
   el.dataset.searchText = (searchableText || '').toLowerCase();
   el.dataset.flagged = flagged ? 'flagged' : '';
@@ -304,8 +300,7 @@ function createArticleCard(article) {
   const flagged = (article.contentFlags || []).length > 0 || (autoIntensity !== null && autoIntensity < -1.0);
 
   const domainHtml = article.domain ? `<span class="domain-tag domain-${article.domain}">${article.domain}</span>` : '';
-  const effectiveRegisterValue = effectiveRegister(article.register, flagged);
-  const registerHtml = effectiveRegisterValue ? `<span class="register-tag register-${effectiveRegisterValue}">${effectiveRegisterValue}</span>` : '';
+  const registerHtml = article.register ? `<span class="register-tag register-${article.register}">${article.register}</span>` : '';
   const countryHtml = article.countryCode ? `<span class="country-tag">${article.countryCode}</span>` : '';
   const flagReasons = [...(article.contentFlags || [])];
   if (autoIntensity !== null && autoIntensity < -1.0) {
@@ -383,7 +378,8 @@ function collectValues(field) {
     const d = item.data;
     const v = field === 'country' ? d.countryCode : d[field];
     if (v) vals.add(v);
-    if (field === 'register' && item.el?.dataset.register === 'flagged') {
+    // Add 'flagged' as a synthetic register option if any items are flagged
+    if (field === 'register' && item.el?.dataset.flagged === 'flagged') {
       vals.add('flagged');
     }
     // Also collect from group sources' representative
@@ -549,11 +545,19 @@ function applyFilters() {
 
     if (includeByType.country.length > 0 && !includeByType.country.includes(el.dataset.country)) visible = false;
     if (includeByType.domain.length > 0 && !includeByType.domain.includes(el.dataset.domain)) visible = false;
-    if (includeByType.register.length > 0 && !includeByType.register.includes(el.dataset.register)) visible = false;
+    if (includeByType.register.length > 0) {
+      const registerMatch = includeByType.register.includes(el.dataset.register);
+      const flaggedMatch = includeByType.register.includes('flagged') && el.dataset.flagged === 'flagged';
+      if (!registerMatch && !flaggedMatch) visible = false;
+    }
 
     if (excludeByType.country.length > 0 && excludeByType.country.includes(el.dataset.country)) visible = false;
     if (excludeByType.domain.length > 0 && excludeByType.domain.includes(el.dataset.domain)) visible = false;
-    if (excludeByType.register.length > 0 && excludeByType.register.includes(el.dataset.register)) visible = false;
+    if (excludeByType.register.length > 0) {
+      const registerExclude = excludeByType.register.includes(el.dataset.register);
+      const flaggedExclude = excludeByType.register.includes('flagged') && el.dataset.flagged === 'flagged';
+      if (registerExclude || flaggedExclude) visible = false;
+    }
 
     if (visible && ageFilterMs > 0) {
       const pub = parseInt(el.dataset.publishedAt, 10);
