@@ -11,6 +11,7 @@ The client is a vanilla JS + CSS single-page app deployed as a static site. It i
 Most personalised apps require an account so the server can remember your preferences. Newsy inverts this: **the browser is the database**.
 
 - Your RSS source list lives in [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) — a private, persistent, per-origin store built into every modern browser.
+- Your brief filter state also lives there, including search, active filters, age window, and the intensity threshold slider position.
 - On each brief request, the client sends its own source list to the curation API. The server is stateless and stores nothing.
 - The most recent brief is also cached in IndexedDB, so the page loads instantly even before the network responds.
 - Nothing is collected, stored, or transmitted to any party other than the RSS feeds you add and the curation API you configure.
@@ -26,14 +27,19 @@ This means your configuration is yours alone: it survives page reloads and brows
 - **Standalone articles** — ungrouped items appear below, styled consistently
 - **In-app reader** — click any headline to open a full reader modal with typography, tags, estimated read time, and a link to the original
 - **Filter bar** — narrow the brief by country, domain, or register; combine filters; use Ctrl/⌘ to add exclusion filters; free-text search across all visible content
+- **Intensity histogram** — a compact distribution view in the brief meta bar shows the whole corpus across the intensity range, with a draggable lower-bound slider for filtering out low-intensity items
 - **Brief age indicator** — a timestamp next to the refresh button shows when the brief was last fetched; auto-refreshes after one hour
 
 ### Source management (`sources.html`)
 - **Source cards** — toggle, test, or delete individual sources; each card shows category, country, and last test verdict
 - **Add source** — provide a name and RSS URL; the feed is tested before saving
 - **Config bar** — name your source configuration; download it as JSON; reload from a saved file
-- **Set default** — load a curated starter set with a diff preview showing what will change; choose to replace or preserve your current sources
 - **Filter toolbar** — narrow sources by category, status, or test verdict
+
+### Catalogue (`catalogue.html`)
+- **Default catalogue loader** — load the built-in `catalogue.json` straight into the browser store
+- **Browse and curate** — search, filter, sort, multi-select, and add feeds from the catalogue into your sources list
+- **Independent removal** — removing a source from the curated list does not delete it from the catalogue, so it can be re-added later
 
 ---
 
@@ -58,7 +64,7 @@ npx serve -l 5000
 # or: python -m http.server 5000
 ```
 
-Then open `http://localhost:5000`. On first load the source list will be empty — use **⟳ set default** in the config bar to load a starter set, or add your own feeds.
+Then open `http://localhost:5000`. On first load the source list may be empty — add feeds manually, import a saved config, or open the catalogue page and use **load default** to seed the built-in catalogue before curating sources.
 
 `api-config.js` reads `localhost` and points the API at `http://localhost:3000`. In production (GitHub Pages) the API URL is injected at deploy time via a GitHub Actions environment variable — no URL is hardcoded in the source.
 
@@ -71,10 +77,10 @@ Then open `http://localhost:5000`. On first load the source list will be empty �
 | `index.html` | Main brief page |
 | `sources.html` | Source management page |
 | `catalogue.html` | Feed catalogue — import, browse, curate |
-| `app.js` | Brief rendering, filtering, reader modal, brief cache |
+| `app.js` | Brief rendering, filtering, reader modal, histogram threshold filter, brief cache |
 | `sources.js` | Source management UI logic |
 | `catalogue.js` | Catalogue UI logic |
-| `idb.js` | IndexedDB layer (sources, catalogue, meta, brief cache) |
+| `idb.js` | IndexedDB layer (sources, catalogue, meta, brief cache, UI preference state) |
 | `sources.default.js` | Curated default source list |
 | `api-config.js` | Resolves API base URL from meta tag at runtime |
 | `style.css` | Global typography and layout |

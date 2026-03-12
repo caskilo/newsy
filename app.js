@@ -26,6 +26,7 @@ let excludePreviewActive = false;
 let excludeToggleLocked = false; // true when toggled via button (not keyboard)
 let filterSummaryExpanded = false;
 let lastScrollY = window.scrollY;
+let intensityThreshold = -Infinity;
 
 const elements = {
   loading: $('#loading'),
@@ -34,8 +35,7 @@ const elements = {
   container: $('#articles-container'),
   meta: $('#brief-meta'),
   metaCount: $('#meta-count'),
-  metaTime: $('#meta-time'),
-  metaEmotional: $('#meta-emotional'),
+  metaHistogram: $('#meta-histogram'),
   footer: $('#footer'),
   refreshBtn: $('#refresh-btn'),
   briefAge: $('#brief-age'),
@@ -212,7 +212,6 @@ function renderBrief(brief) {
   allItems = [];
 
   elements.metaCount.textContent = `${brief.articleCount} articles`;
-  elements.metaTime.textContent = `${brief.totalReadTime} min read`;
   show(elements.meta);
 
   // Render groups in a grid
@@ -227,7 +226,8 @@ function renderBrief(brief) {
         return (s.contentFlags || []).length > 0 || sourceIntensityFlagged;
       });
       const groupPub = group.publishedRange?.latest || group.representative?.publishedAt || 0;
-      setFilterData(el, group.domain, group.register, group.countryCode, group.headline + ' ' + group.sources.map(s => s.title).join(' '), flagged, groupPub);
+      const groupIntensity = computeIntensity(group.representative?.emotionalScore, group.representative?.arousalScore);
+      setFilterData(el, group.domain, group.register, group.countryCode, group.headline + ' ' + group.sources.map(s => s.title).join(' '), flagged, groupPub, groupIntensity);
       grid.appendChild(el);
       allItems.push({ type: 'group', data: group, el });
     }
@@ -241,7 +241,8 @@ function renderBrief(brief) {
     const autoIntensity = computeIntensity(article.emotionalScore, article.arousalScore);
     const intensityFlagged = autoIntensity !== null && autoIntensity < -1.0;
     const flagged = (article.contentFlags || []).length > 0 || intensityFlagged;
-    setFilterData(el, article.domain, article.register, article.countryCode, article.title + ' ' + (article.summary || '') + ' ' + (article.sourceName || ''), flagged, article.publishedAt || 0);
+    const articleIntensity = computeIntensity(article.emotionalScore, article.arousalScore);
+    setFilterData(el, article.domain, article.register, article.countryCode, article.title + ' ' + (article.summary || '') + ' ' + (article.sourceName || ''), flagged, article.publishedAt || 0, articleIntensity);
     el.draggable = false;  // draggable only when drag mode is active
     el.dataset.articleId = article.id;
     elements.container.appendChild(el);
@@ -255,13 +256,14 @@ function renderBrief(brief) {
   show(elements.footer);
 }
 
-function setFilterData(el, domain, register, country, searchableText, flagged = false, publishedAt = 0) {
+function setFilterData(el, domain, register, country, searchableText, flagged = false, publishedAt = 0, intensity = null) {
   el.dataset.domain = domain || '';
   el.dataset.register = register || '';
   el.dataset.country = country || '';
   el.dataset.searchText = (searchableText || '').toLowerCase();
   el.dataset.flagged = flagged ? 'flagged' : '';
   el.dataset.publishedAt = publishedAt || 0;
+  el.dataset.intensity = intensity !== null ? intensity : '';
 }
 
 // ─── Group card ───
@@ -512,40 +514,77 @@ function updateFilterSummaryVisibility() {
   }
 }
 
-function renderIntensityMeter(visibleItems) {
-  if (!visibleItems.length) {
-    elements.metaEmotional.innerHTML = '';
-    return;
-  }
-  // Only include items with actual lexicon hits (intensityScore > 0).
-  // intensityScore === 0 means no tokens matched — N/A, not "calm".
-  let totalWeight = 0;
-  let weightedIntensity = 0;
-  for (const item of visibleItems) {
-    if ((item.data.intensityScore || 0) === 0) continue; // skip unscored
-    const weight = item.type === 'group' ? (item.data.articleCount || 1) : 1;
-    weightedIntensity += item.data.intensityScore * weight;
-    totalWeight += weight;
-  }
-  const load = totalWeight > 0 ? weightedIntensity / totalWeight : 0;
+function renderHistogram() {
+  const el = elements.metaHistogram;
+  if (!el || !allItems.length) { if (el) el.innerHTML = ''; return; }
 
-  let tone, toneColor;
-  if (load < 0.2)       { tone = 'calm';     toneColor = 'var(--positive)'; }
-  else if (load < 0.4)  { tone = 'measured'; toneColor = 'var(--accent)'; }
-  else if (load < 0.65) { tone = 'tense';    toneColor = 'var(--warning)'; }
-  else                  { tone = 'heavy';    toneColor = 'var(--negative)'; }
+  // Collect intensity values from entire corpus
+  const values = allItems.map(item => {
+    const d = item.data;
+    return computeIntensity(d.emotionalScore ?? d.representative?.emotionalScore,
+                            d.arousalScore  ?? d.representative?.arousalScore) ?? 0;
+  });
 
-  elements.metaEmotional.innerHTML = `
-    <span style="display:flex;align-items:center;gap:6px" title="intensity: ${Math.round(load * 100)}%">
-      <span>${tone}</span>
-      <div style="width:60px;height:6px;background:rgba(139,148,158,0.2);border-radius:3px;overflow:hidden">
-        <div style="width:${Math.round(load * 100)}%;height:100%;background:${toneColor};transition:width 0.4s ease"></div>
+  const BINS = 25;
+  const MIN = -1.8, MAX = 1;
+  const step = (MAX - MIN) / BINS;
+  const counts = new Array(BINS).fill(0);
+  for (const v of values) {
+    const idx = Math.min(BINS - 1, Math.max(0, Math.floor((v - MIN) / step)));
+    counts[idx]++;
+  }
+  const peak = Math.max(...counts, 1);
+
+  // Convert threshold to slider position (0-100)
+  const thresholdPct = ((intensityThreshold === -Infinity ? MIN : intensityThreshold) - MIN) / (MAX - MIN) * 100;
+
+  const bars = counts.map((c, i) => {
+    const binMin = MIN + i * step;
+    const heightPct = Math.round(c / peak * 100);
+    const active = binMin >= (intensityThreshold === -Infinity ? MIN : intensityThreshold);
+    const color = binMin < -0.5 ? 'var(--negative)' : binMin < 0 ? '#f0883e' : binMin < 0.3 ? 'var(--accent)' : 'var(--positive)';
+    const opacity = active ? '1' : '0.2';
+    return `<div class="hist-bar" style="height:${heightPct}%;background:${color};opacity:${opacity}" title="${binMin.toFixed(1)}–${(binMin+step).toFixed(1)}: ${c}"></div>`;
+  }).join('');
+
+  const thresholdLabel = intensityThreshold === -Infinity ? 'all' : intensityThreshold.toFixed(2);
+
+  el.innerHTML = `
+    <div class="hist-wrap" title="Intensity distribution — drag slider to filter">
+      <div class="hist-bars">${bars}</div>
+      <div class="hist-slider-row">
+        <input type="range" class="hist-slider" min="0" max="100" step="1" value="${Math.round(thresholdPct)}"
+          aria-label="Intensity threshold">
+        <span class="hist-label">&ge; ${thresholdLabel}</span>
       </div>
-    </span>
+    </div>
   `;
+
+  const slider = el.querySelector('.hist-slider');
+
+  slider.addEventListener('input', (e) => {
+    const pct = parseFloat(e.target.value) / 100;
+    const raw = MIN + pct * (MAX - MIN);
+    intensityThreshold = pct <= 0.01 ? -Infinity : Math.round(raw * 100) / 100;
+    el.querySelector('.hist-label').textContent = `\u2265 ${intensityThreshold === -Infinity ? 'all' : intensityThreshold.toFixed(2)}`;
+    // Recolour bars immediately
+    const bars = el.querySelectorAll('.hist-bar');
+    bars.forEach((b, i) => {
+      const binMin = MIN + i * step;
+      b.style.opacity = binMin >= (intensityThreshold === -Infinity ? MIN : intensityThreshold) ? '1' : '0.2';
+    });
+    applyFilters({ skipHistogram: true });
+    saveFilterState();
+  });
+
+  slider.addEventListener('change', () => {
+    applyFilters();
+    saveFilterState();
+  });
 }
 
-function applyFilters() {
+function applyFilters(options = {}) {
+  const { skipHistogram = false } = options;
   const items = elements.container.querySelectorAll('.story-group, .article-card');
   const includeByType = { country: [], domain: [], register: [] };
   const excludeByType = { country: [], domain: [], register: [] };
@@ -558,7 +597,8 @@ function applyFilters() {
   }
 
   const now = Date.now();
-  const hasFilters = activeFilters.length > 0 || searchQuery.length > 0 || ageFilterMs > 0;
+  const hasThreshold = intensityThreshold !== -Infinity;
+  const hasFilters = activeFilters.length > 0 || searchQuery.length > 0 || ageFilterMs > 0 || hasThreshold;
   let visibleCount = 0;
   const visibleItems = [];
 
@@ -590,6 +630,10 @@ function applyFilters() {
       visible = el.dataset.searchText.includes(searchQuery);
     }
 
+    if (visible && hasThreshold && el.dataset.intensity !== '') {
+      visible = parseFloat(el.dataset.intensity) >= intensityThreshold;
+    }
+
     el.style.display = visible ? '' : 'none';
     if (visible) {
       visibleCount++;
@@ -604,7 +648,9 @@ function applyFilters() {
     ? `${visibleCount} / ${totalItems} stories`
     : `${totalItems} stories`;
 
-  renderIntensityMeter(visibleItems);
+  if (!skipHistogram) {
+    renderHistogram();
+  }
 }
 
 function handleFilterSelection(type, el, mode) {
@@ -1102,7 +1148,7 @@ async function saveFilterState() {
   try {
     await idb.open();
     const nonAuto = activeFilters.filter(f => !f.auto);
-    await idb.setMeta('filterState', { filters: nonAuto, searchQuery, ageFilterMs });
+    await idb.setMeta('filterState', { filters: nonAuto, searchQuery, ageFilterMs, intensityThreshold });
   } catch (e) {
     console.warn('[filters] Could not save filter state', e);
   }
@@ -1130,6 +1176,9 @@ async function restoreFilterState() {
       if (elements.filterAge) {
         elements.filterAge.value = ageFilterMs > 0 ? String(ageFilterMs) : '';
       }
+    }
+    if (saved.intensityThreshold !== undefined) {
+      intensityThreshold = saved.intensityThreshold;
     }
   } catch (e) {
     console.warn('[filters] Could not restore filter state', e);

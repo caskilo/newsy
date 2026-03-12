@@ -131,9 +131,9 @@ header h1 {
 /* Meta bar */
 .meta-bar {
   display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 12px 16px;
+  align-items: center;
+  gap: 40px;
+  padding: 8px 16px;
   background: var(--surface);
   border-radius: var(--radius);
   margin-bottom: 20px;
@@ -145,6 +145,87 @@ header h1 {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Intensity histogram */
+.meta-histogram {
+  flex: 1;
+  min-width: 0;
+}
+
+.hist-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.hist-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+  width: 100%;
+}
+
+.hist-bar {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 1px 1px 0 0;
+  transition: opacity 0.15s ease;
+}
+
+.hist-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.hist-slider {
+  flex: 1;
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+}
+
+.hist-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.hist-slider::-webkit-slider-thumb:hover {
+  background: var(--text);
+}
+
+.hist-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  border: none;
+  cursor: pointer;
+}
+
+.hist-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: right;
 }
 
 /* Articles */
