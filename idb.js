@@ -1,9 +1,10 @@
 /**
  * Newsy IDB — IndexedDB persistence layer for client-side state.
  *
- * Database: newsy_idb (version 1)
+ * Database: newsy_idb (version 2)
  * Object Stores:
  *   sources   — keyPath: "id"   (SourceRecord objects)
+ *   catalogue — keyPath: "id"   (CatalogueEntry objects, indexes: country, category)
  *   meta      — keyPath: "key"  (arbitrary k/v config)
  *
  * All methods return Promises. If IndexedDB is unavailable,
@@ -11,10 +12,10 @@
  */
 
 const DB_NAME = 'newsy_idb';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbInstance = null;
-const memFallback = { sources: new Map(), meta: new Map() };
+const memFallback = { sources: new Map(), catalogue: new Map(), meta: new Map() };
 let usingFallback = false;
 
 function open() {
@@ -36,6 +37,11 @@ function open() {
       }
       if (!db.objectStoreNames.contains('meta')) {
         db.createObjectStore('meta', { keyPath: 'key' });
+      }
+      if (!db.objectStoreNames.contains('catalogue')) {
+        const cat = db.createObjectStore('catalogue', { keyPath: 'id' });
+        cat.createIndex('country', 'country', { unique: false });
+        cat.createIndex('category', 'category', { unique: false });
       }
     };
 
@@ -123,6 +129,52 @@ async function setMeta(key, value) {
   return reqToPromise(tx('meta', 'readwrite').put({ key, value }));
 }
 
+// --- Catalogue ---
+
+async function getAllCatalogue() {
+  await open();
+  if (usingFallback) return [...memFallback.catalogue.values()];
+  return reqToPromise(tx('catalogue').getAll());
+}
+
+async function getCatalogueEntry(id) {
+  await open();
+  if (usingFallback) return memFallback.catalogue.get(id) || null;
+  return reqToPromise(tx('catalogue').get(id));
+}
+
+async function putCatalogueEntry(entry) {
+  await open();
+  if (usingFallback) { memFallback.catalogue.set(entry.id, entry); return entry; }
+  return reqToPromise(tx('catalogue', 'readwrite').put(entry));
+}
+
+async function putAllCatalogue(entries) {
+  await open();
+  if (usingFallback) {
+    for (const e of entries) memFallback.catalogue.set(e.id, e);
+    return;
+  }
+  const store = tx('catalogue', 'readwrite');
+  for (const e of entries) store.put(e);
+  return new Promise((resolve, reject) => {
+    store.transaction.oncomplete = () => resolve();
+    store.transaction.onerror = () => reject(store.transaction.error);
+  });
+}
+
+async function deleteCatalogueEntry(id) {
+  await open();
+  if (usingFallback) { memFallback.catalogue.delete(id); return; }
+  return reqToPromise(tx('catalogue', 'readwrite').delete(id));
+}
+
+async function clearCatalogue() {
+  await open();
+  if (usingFallback) { memFallback.catalogue.clear(); return; }
+  return reqToPromise(tx('catalogue', 'readwrite').clear());
+}
+
 // --- Config export / import ---
 
 async function exportConfig() {
@@ -167,6 +219,12 @@ window.newsyIdb = {
   putSource,
   putAllSources,
   deleteSource,
+  getAllCatalogue,
+  getCatalogueEntry,
+  putCatalogueEntry,
+  putAllCatalogue,
+  deleteCatalogueEntry,
+  clearCatalogue,
   getMeta,
   setMeta,
   exportConfig,

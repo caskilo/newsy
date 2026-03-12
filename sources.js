@@ -27,7 +27,6 @@ const els = {
   addCountry: $('#add-country'),
   urlTestResult: $('#url-test-result'),
   configName: $('#config-name'),
-  configSetDefault: $('#config-set-default'),
   configDownload: $('#config-download'),
   configUpload: $('#config-upload'),
   configFile: $('#config-file'),
@@ -348,25 +347,6 @@ async function uploadConfig(file) {
   }
 }
 
-async function loadDefaultSources() {
-  const defaults = window.DEFAULT_SOURCES || [];
-  const current = await idb.exportConfig();
-  const diff = diffConfigs(current.sources, defaults);
-  showDiffModal({
-    title: 'Reset to default sources?',
-    diff,
-    showActions: true,
-    onConfirm: async () => {
-      const config = { configName: 'newsy-sources', sources: defaults };
-      await idb.importConfig(config);
-      await reloadSourcesFromStore();
-    },
-    onMerge: diff.removed.length > 0 ? async () => {
-      await mergeIntoCurrent({ configName: 'newsy-sources', sources: defaults });
-    } : null,
-  });
-}
-
 async function mergeIntoCurrent(incoming) {
   const current = await idb.exportConfig();
   const merged = new Map((current.sources || []).map(s => [s.id, s]));
@@ -551,9 +531,7 @@ els.container.addEventListener('click', (e) => {
   else if (action === 'delete') deleteSource(id);
 });
 
-$('#add-source-btn').addEventListener('click', () => {
-  els.addPanel.classList.contains('hidden') ? show(els.addPanel) : hide(els.addPanel);
-});
+
 $('#cancel-add-btn').addEventListener('click', () => { hide(els.addPanel); hide(els.urlTestResult); });
 $('#test-url-btn').addEventListener('click', testUrl);
 $('#confirm-add-btn').addEventListener('click', addNewSource);
@@ -563,7 +541,6 @@ els.filterVerdict.addEventListener('change', render);
 
 if (els.configName) els.configName.addEventListener('change', saveConfigName);
 if (els.configName) els.configName.addEventListener('blur', saveConfigName);
-if (els.configSetDefault) els.configSetDefault.addEventListener('click', loadDefaultSources);
 if (els.configDownload) els.configDownload.addEventListener('click', downloadConfig);
 if (els.configUpload) els.configUpload.addEventListener('click', () => els.configFile.click());
 if (els.configFile) els.configFile.addEventListener('change', (e) => {

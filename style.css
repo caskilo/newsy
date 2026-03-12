@@ -312,7 +312,13 @@ header h1 {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   background: rgba(22, 27, 34, 0.92);
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.22s ease;
+  transform: translateY(0);
+  will-change: transform;
+}
+
+.filter-bar.is-peek-hidden {
+  transform: translateY(calc(-100% + 1px));
 }
 
 .filter-row {

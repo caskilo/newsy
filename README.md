@@ -70,13 +70,16 @@ Then open `http://localhost:5000`. On first load the source list will be empty â
 |------|---------|
 | `index.html` | Main brief page |
 | `sources.html` | Source management page |
+| `catalogue.html` | Feed catalogue â€” import, browse, curate |
 | `app.js` | Brief rendering, filtering, reader modal, brief cache |
 | `sources.js` | Source management UI logic |
-| `idb.js` | IndexedDB layer (sources, meta, brief cache) |
+| `catalogue.js` | Catalogue UI logic |
+| `idb.js` | IndexedDB layer (sources, catalogue, meta, brief cache) |
 | `sources.default.js` | Curated default source list |
 | `api-config.js` | Resolves API base URL from meta tag at runtime |
 | `style.css` | Global typography and layout |
 | `sources.css` | Source page styles |
+| `catalogue.css` | Catalogue page styles |
 
 ---
 

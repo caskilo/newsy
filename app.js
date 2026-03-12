@@ -25,6 +25,7 @@ let dragModeActive = false;
 let excludePreviewActive = false;
 let excludeToggleLocked = false; // true when toggled via button (not keyboard)
 let filterSummaryExpanded = false;
+let lastScrollY = window.scrollY;
 
 const elements = {
   loading: $('#loading'),
@@ -101,6 +102,27 @@ function startAgeTicker(cachedAt) {
   show(elements.briefAge);
   tick();
   _ageInterval = setInterval(tick, 30000);
+}
+
+function updateFilterBarPeek() {
+  if (!elements.filterBar || elements.filterBar.classList.contains('hidden')) return;
+
+  const currentScrollY = window.scrollY;
+  const delta = currentScrollY - lastScrollY;
+
+  if (currentScrollY <= 0) {
+    elements.filterBar.classList.remove('is-peek-hidden');
+    lastScrollY = currentScrollY;
+    return;
+  }
+
+  if (delta > 6) {
+    elements.filterBar.classList.add('is-peek-hidden');
+  } else if (delta < -4) {
+    elements.filterBar.classList.remove('is-peek-hidden');
+  }
+
+  lastScrollY = currentScrollY;
 }
 
 // ─── Fetch ───
@@ -1132,6 +1154,7 @@ if (elements.dragToggleBtn) {
 // ─── Init ───
 
 elements.refreshBtn.addEventListener('click', () => fetchBrief(true));
+window.addEventListener('scroll', updateFilterBarPeek, { passive: true });
 
 (async () => {
   await restoreFilterState();
