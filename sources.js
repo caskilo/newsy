@@ -540,10 +540,6 @@ els.container.addEventListener('click', (e) => {
 });
 
 
-const _srcAddBtn = _src$('#src-add-source-btn');
-if (_srcAddBtn) _srcAddBtn.addEventListener('click', () => {
-  els.addPanel.classList.contains('hidden') ? _srcShow(els.addPanel) : _srcHide(els.addPanel);
-});
 _src$('#src-cancel-add-btn').addEventListener('click', () => { _srcHide(els.addPanel); _srcHide(els.urlTestResult); });
 _src$('#src-test-url-btn').addEventListener('click', testUrl);
 _src$('#src-confirm-add-btn').addEventListener('click', addNewSource);

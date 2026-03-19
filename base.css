@@ -343,20 +343,20 @@ header h1 {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  flex: 1;
   align-items: center;
+  margin-right: 24px; /* gap before source-stats */
 }
 
 .filter-group select {
   background: var(--bg);
   color: var(--text-muted);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 5px 10px;
+  border-radius: var(--radius);
+  padding: 4px 8px;
   font-size: 0.75rem;
-  cursor: pointer;
-  min-width: 0;
-  flex: 1;
+  min-width: 120px; /* narrower than flex: 1 */
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .filter-group .input-search {
@@ -664,8 +664,13 @@ footer p {
     flex-direction: row;
     flex-wrap: wrap;
     gap: 6px;
+    margin-right: 0; /* remove gap on mobile */
   }
-  .filter-group select { flex: 1; min-width: 0; }
+  .filter-group select { 
+    flex: 1; 
+    min-width: 0; 
+    max-width: calc(33.33% - 4px); /* 3 per row on mobile */
+  }
 
   .diff-modal-footer { flex-direction: column; gap: 12px; }
   .diff-mode-toggle { flex-direction: column; align-items: flex-start; gap: 8px; }
