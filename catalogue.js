@@ -4,12 +4,14 @@
  * Selected feeds are promoted to the 'sources' store for use by the pipeline.
  */
 
-const API = window.NEWSY_API_BASE || window.location.origin;
-const idb = window.newsyIdb;
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => document.querySelectorAll(sel);
-const show = (el) => el.classList.remove('hidden');
-const hide = (el) => el.classList.add('hidden');
+(function () {
+'use strict';
+
+const _catAPI = window.NEWSY_API_BASE || window.location.origin;
+const _catIdb = window.newsyIdb;
+const _cat$ = (sel) => document.querySelector(sel);
+const _catShow = (el) => el.classList.remove('hidden');
+const _catHide = (el) => el.classList.add('hidden');
 
 let allEntries = [];
 let curatedIds = new Set();
@@ -20,43 +22,48 @@ const CATEGORIES = [
   'environment', 'health', 'culture', 'sports', 'human', 'meta',
 ];
 
-const els = {
-  container:      $('#cat-container'),
-  loading:        $('#loading'),
-  stats:          $('#cat-stats'),
-  search:         $('#cat-search'),
-  filterCategory: $('#filter-category'),
-  filterLanguage: $('#filter-language'),
-  filterStatus:   $('#filter-status'),
-  sortBy:         $('#sort-by'),
-  bulkBar:        $('#bulk-bar'),
-  selectAll:      $('#select-all'),
-  selectCount:    $('#select-count'),
-  opmlPanel:      $('#opml-panel'),
-  opmlFile:       $('#opml-file'),
-  opmlText:       $('#opml-text'),
-  opmlResult:     $('#opml-result'),
-  addPanel:       $('#add-panel'),
-  addName:        $('#add-name'),
-  addUrl:         $('#add-url'),
-  addCategory:    $('#add-category'),
-  addCountry:     $('#add-country'),
-  addLanguage:    $('#add-language'),
-  urlTestResult:  $('#url-test-result'),
+function _catEsc(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+const catEls = {
+  container:      _cat$('#cat-container'),
+  loading:        _cat$('#cat-loading'),
+  stats:          _cat$('#cat-stats'),
+  search:         _cat$('#cat-search'),
+  filterCategory: _cat$('#cat-filter-category'),
+  filterLanguage: _cat$('#cat-filter-language'),
+  filterStatus:   _cat$('#cat-filter-status'),
+  sortBy:         _cat$('#cat-sort-by'),
+  bulkBar:        _cat$('#bulk-bar'),
+  selectAll:      _cat$('#select-all'),
+  selectCount:    _cat$('#select-count'),
+  opmlPanel:      _cat$('#opml-panel'),
+  opmlFile:       _cat$('#opml-file'),
+  opmlText:       _cat$('#opml-text'),
+  opmlResult:     _cat$('#opml-result'),
+  addPanel:       _cat$('#cat-add-panel'),
+  addName:        _cat$('#cat-add-name'),
+  addUrl:         _cat$('#cat-add-url'),
+  addCategory:    _cat$('#cat-add-category'),
+  addCountry:     _cat$('#cat-add-country'),
+  addLanguage:    _cat$('#cat-add-language'),
+  urlTestResult:  _cat$('#cat-url-test-result'),
 };
 
 // --- Init ---
 
-async function init() {
-  await idb.open();
-  allEntries = await idb.getAllCatalogue();
+async function catInit() {
+  await _catIdb.open();
+  allEntries = await _catIdb.getAllCatalogue();
 
-  const sources = await idb.getAllSources();
+  const sources = await _catIdb.getAllSources();
   curatedIds = new Set(sources.map(s => s.id));
 
   populateFilters();
   render();
-  hide(els.loading);
+  _catHide(catEls.loading);
 }
 
 // --- Filters ---
@@ -70,23 +77,23 @@ function populateFilters() {
     if (e.language) langs.add(e.language);
   }
 
-  els.filterCategory.innerHTML = '<option value="">all categories</option>' +
+  catEls.filterCategory.innerHTML = '<option value="">all categories</option>' +
     [...cats].sort().map(c => `<option value="${c}">${c}</option>`).join('');
 
-  els.filterLanguage.innerHTML = '<option value="">all languages</option>' +
+  catEls.filterLanguage.innerHTML = '<option value="">all languages</option>' +
     [...langs].sort().map(c => `<option value="${c}">${c}</option>`).join('');
 
-  els.addCategory.innerHTML = '<option value="">category</option>' +
+  catEls.addCategory.innerHTML = '<option value="">category</option>' +
     [...cats].sort().map(c => `<option value="${c}">${c}</option>`).join('');
 }
 
 function getFiltered() {
   let list = [...allEntries];
-  const q = els.search.value.trim().toLowerCase();
-  const cat = els.filterCategory.value;
-  const lang = els.filterLanguage.value;
-  const status = els.filterStatus.value;
-  const sort = els.sortBy?.value || 'quality';
+  const q = catEls.search.value.trim().toLowerCase();
+  const cat = catEls.filterCategory.value;
+  const lang = catEls.filterLanguage.value;
+  const status = catEls.filterStatus.value;
+  const sort = catEls.sortBy?.value || 'quality';
 
   if (q) list = list.filter(e =>
     (e.name || '').toLowerCase().includes(q) ||
@@ -112,12 +119,12 @@ function getFiltered() {
 function render() {
   const filtered = getFiltered();
 
-  els.stats.textContent = `${allEntries.length} feeds` +
+  catEls.stats.textContent = `${allEntries.length} feeds` +
     (curatedIds.size ? ` · ${curatedIds.size} curated` : '');
 
   // Clear old cards
-  els.container.querySelectorAll('.cat-card').forEach(c => c.remove());
-  els.container.querySelectorAll('.status-message.dynamic').forEach(c => c.remove());
+  catEls.container.querySelectorAll('.cat-card').forEach(c => c.remove());
+  catEls.container.querySelectorAll('.status-message.dynamic').forEach(c => c.remove());
 
   if (filtered.length === 0) {
     const msg = document.createElement('div');
@@ -125,10 +132,10 @@ function render() {
     msg.innerHTML = allEntries.length === 0
       ? '<p>Catalogue is empty. Use <strong>import OPML</strong> or <strong>+ add feed</strong> above to populate it.</p>'
       : '<p>No feeds match the current filters.</p>';
-    els.container.appendChild(msg);
+    catEls.container.appendChild(msg);
   } else {
     for (const entry of filtered) {
-      els.container.appendChild(createCard(entry));
+      catEls.container.appendChild(createCard(entry));
     }
   }
 
@@ -157,7 +164,7 @@ function createCard(entry) {
            ${selected.has(entry.id) ? 'checked' : ''}>
     <div class="cat-body">
       <div class="cat-main-row">
-        <span class="cat-name" title="${esc(entry.name)}">${esc(entry.name)}</span>
+        <span class="cat-name" title="${_catEsc(entry.name)}">${_catEsc(entry.name)}</span>
         <div class="cat-side">
           <span class="verdict-badge verdict-${verdict}">${verdict}</span>
           <div class="cat-actions">
@@ -170,7 +177,7 @@ function createCard(entry) {
           </div>
         </div>
       </div>
-      <div class="cat-url" title="${esc(entry.rssUrl)}">${esc(entry.rssUrl)}</div>
+      <div class="cat-url" title="${_catEsc(entry.rssUrl)}">${_catEsc(entry.rssUrl)}</div>
       <div class="cat-tags">
         ${entry.category ? `<span class="tag tag-category">${entry.category}</span>` : ''}
         ${entry.country ? `<span class="tag tag-country">${entry.country}</span>` : ''}
@@ -189,8 +196,8 @@ function formatTestDetail(r) {
   if (r.itemCount !== undefined) parts.push(`<span>${r.itemCount} items</span>`);
   if (r.freshnessHours != null) parts.push(`<span>latest: ${r.freshnessHours}h ago</span>`);
   if (r.responseTimeMs) parts.push(`<span>${r.responseTimeMs}ms</span>`);
-  if (r.feedTitle) parts.push(`<span>"${esc(r.feedTitle)}"</span>`);
-  if (r.errors?.length > 0) parts.push(`<span style="color:var(--negative)">${esc(r.errors[0])}</span>`);
+  if (r.feedTitle) parts.push(`<span>"${_catEsc(r.feedTitle)}"</span>`);
+  if (r.errors?.length > 0) parts.push(`<span style="color:var(--negative)">${_catEsc(r.errors[0])}</span>`);
   return parts.join('');
 }
 
@@ -198,13 +205,13 @@ function formatTestDetail(r) {
 
 function updateBulkBar() {
   if (selected.size > 0) {
-    show(els.bulkBar);
-    els.selectCount.textContent = `${selected.size} selected`;
+    _catShow(catEls.bulkBar);
+    catEls.selectCount.textContent = `${selected.size} selected`;
     const filtered = getFiltered();
-    els.selectAll.checked = filtered.length > 0 && filtered.every(e => selected.has(e.id));
+    catEls.selectAll.checked = filtered.length > 0 && filtered.every(e => selected.has(e.id));
   } else {
-    hide(els.bulkBar);
-    els.selectAll.checked = false;
+    _catHide(catEls.bulkBar);
+    catEls.selectAll.checked = false;
   }
 }
 
@@ -212,7 +219,7 @@ function toggleSelect(id) {
   if (selected.has(id)) selected.delete(id);
   else selected.add(id);
   // Update just the card visually
-  const card = els.container.querySelector(`.cat-card[data-id="${id}"]`);
+  const card = catEls.container.querySelector(`.cat-card[data-id="${id}"]`);
   if (card) {
     card.classList.toggle('selected', selected.has(id));
     const cb = card.querySelector('.cat-check');
@@ -234,10 +241,10 @@ function selectAllVisible() {
 // --- OPML Import ---
 
 async function parseOpml() {
-  let xml = els.opmlText.value.trim();
+  let xml = catEls.opmlText.value.trim();
 
-  if (!xml && els.opmlFile.files[0]) {
-    xml = await els.opmlFile.files[0].text();
+  if (!xml && catEls.opmlFile.files[0]) {
+    xml = await catEls.opmlFile.files[0].text();
   }
 
   if (!xml) {
@@ -245,12 +252,12 @@ async function parseOpml() {
     return;
   }
 
-  const btn = $('#opml-parse-btn');
+  const btn = _cat$('#opml-parse-btn');
   btn.disabled = true;
   btn.textContent = 'parsing...';
 
   try {
-    const res = await fetch(`${API}/api/parse-opml`, {
+    const res = await fetch(`${_catAPI}/api/parse-opml`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ xml }),
@@ -301,8 +308,8 @@ async function parseOpml() {
     }
 
     if (newEntries.length > 0) {
-      await idb.putAllCatalogue(newEntries);
-      allEntries = await idb.getAllCatalogue();
+      await _catIdb.putAllCatalogue(newEntries);
+      allEntries = await _catIdb.getAllCatalogue();
       populateFilters();
       render();
     }
@@ -313,8 +320,8 @@ async function parseOpml() {
       false
     );
 
-    els.opmlText.value = '';
-    els.opmlFile.value = '';
+    catEls.opmlText.value = '';
+    catEls.opmlFile.value = '';
   } catch (err) {
     showOpmlResult(`Error: ${err.message}`, true);
   } finally {
@@ -324,41 +331,41 @@ async function parseOpml() {
 }
 
 function showOpmlResult(msg, isError) {
-  els.opmlResult.textContent = msg;
-  els.opmlResult.className = 'opml-result' + (isError ? ' error' : '');
-  show(els.opmlResult);
+  catEls.opmlResult.textContent = msg;
+  catEls.opmlResult.className = 'opml-result' + (isError ? ' error' : '');
+  _catShow(catEls.opmlResult);
 }
 
 // --- Manual add ---
 
 async function testUrl() {
-  const url = els.addUrl.value.trim();
+  const url = catEls.addUrl.value.trim();
   if (!url) return;
 
-  const btn = $('#test-url-btn');
+  const btn = _cat$('#cat-test-url-btn');
   btn.disabled = true;
   btn.textContent = 'testing...';
-  hide(els.urlTestResult);
+  _catHide(catEls.urlTestResult);
 
   try {
-    const res = await fetch(`${API}/api/test-feed`, {
+    const res = await fetch(`${_catAPI}/api/test-feed`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
     });
     const result = await res.json();
 
-    els.urlTestResult.className = `test-result ${result.verdict || 'fail'}`;
-    els.urlTestResult.textContent = formatUrlTestResult(result);
-    show(els.urlTestResult);
+    catEls.urlTestResult.className = `test-result ${result.verdict || 'fail'}`;
+    catEls.urlTestResult.textContent = formatUrlTestResult(result);
+    _catShow(catEls.urlTestResult);
 
-    if (!els.addName.value && result.feedTitle) {
-      els.addName.value = result.feedTitle;
+    if (!catEls.addName.value && result.feedTitle) {
+      catEls.addName.value = result.feedTitle;
     }
   } catch (err) {
-    els.urlTestResult.className = 'test-result fail';
-    els.urlTestResult.textContent = `Error: ${err.message}`;
-    show(els.urlTestResult);
+    catEls.urlTestResult.className = 'test-result fail';
+    catEls.urlTestResult.textContent = `Error: ${err.message}`;
+    _catShow(catEls.urlTestResult);
   } finally {
     btn.disabled = false;
     btn.textContent = 'test URL';
@@ -376,8 +383,8 @@ function formatUrlTestResult(r) {
 }
 
 async function addFeed() {
-  const name = els.addName.value.trim();
-  const rssUrl = els.addUrl.value.trim();
+  const name = catEls.addName.value.trim();
+  const rssUrl = catEls.addUrl.value.trim();
   if (!name || !rssUrl) return alert('Name and URL are required');
 
   const id = slugify(name);
@@ -389,24 +396,24 @@ async function addFeed() {
     id,
     name,
     rssUrl,
-    category: els.addCategory.value,
-    country: els.addCountry.value.trim(),
-    language: (els.addLanguage.value.trim()) || 'en',
+    category: catEls.addCategory.value,
+    country: catEls.addCountry.value.trim(),
+    language: (catEls.addLanguage.value.trim()) || 'en',
     source: 'manual',
     addedAt: Date.now(),
     lastTestResult: null,
   };
 
-  await idb.putCatalogueEntry(entry);
-  allEntries = await idb.getAllCatalogue();
+  await _catIdb.putCatalogueEntry(entry);
+  allEntries = await _catIdb.getAllCatalogue();
   populateFilters();
   render();
 
-  els.addName.value = '';
-  els.addUrl.value = '';
-  els.addCountry.value = '';
-  hide(els.addPanel);
-  hide(els.urlTestResult);
+  catEls.addName.value = '';
+  catEls.addUrl.value = '';
+  catEls.addCountry.value = '';
+  _catHide(catEls.addPanel);
+  _catHide(catEls.urlTestResult);
 }
 
 // --- Feed testing ---
@@ -415,11 +422,11 @@ async function testEntry(id) {
   const entry = allEntries.find(e => e.id === id);
   if (!entry) return;
 
-  const btn = els.container.querySelector(`[data-action="test"][data-id="${id}"]`);
+  const btn = catEls.container.querySelector(`[data-action="test"][data-id="${id}"]`);
   if (btn) { btn.disabled = true; btn.textContent = '...'; }
 
   try {
-    const res = await fetch(`${API}/api/test-feed`, {
+    const res = await fetch(`${_catAPI}/api/test-feed`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: entry.rssUrl }),
@@ -429,8 +436,8 @@ async function testEntry(id) {
     if (result.feedTitle && (!entry.name || entry.name === entry.rssUrl)) {
       entry.name = result.feedTitle;
     }
-    await idb.putCatalogueEntry(entry);
-    allEntries = await idb.getAllCatalogue();
+    await _catIdb.putCatalogueEntry(entry);
+    allEntries = await _catIdb.getAllCatalogue();
     render();
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'test'; }
@@ -439,7 +446,7 @@ async function testEntry(id) {
 
 async function bulkTest() {
   const ids = [...selected];
-  const btn = $('#bulk-test');
+  const btn = _cat$('#bulk-test');
   btn.disabled = true;
   btn.textContent = `testing 0/${ids.length}...`;
 
@@ -451,7 +458,7 @@ async function bulkTest() {
       const entry = allEntries.find(e => e.id === id);
       if (!entry) return;
       try {
-        const res = await fetch(`${API}/api/test-feed`, {
+        const res = await fetch(`${_catAPI}/api/test-feed`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: entry.rssUrl }),
@@ -461,17 +468,17 @@ async function bulkTest() {
         if (result.feedTitle && (!entry.name || entry.name === entry.rssUrl)) {
           entry.name = result.feedTitle;
         }
-        await idb.putCatalogueEntry(entry);
+        await _catIdb.putCatalogueEntry(entry);
       } catch (err) {
         entry.lastTestResult = { verdict: 'fail', errors: [err.message] };
-        await idb.putCatalogueEntry(entry);
+        await _catIdb.putCatalogueEntry(entry);
       }
       done++;
       btn.textContent = `testing ${done}/${ids.length}...`;
     }));
   }
 
-  allEntries = await idb.getAllCatalogue();
+  allEntries = await _catIdb.getAllCatalogue();
   render();
   btn.disabled = false;
   btn.textContent = 'test selected';
@@ -486,7 +493,7 @@ function showCurateModal(ids) {
   const newOnes = entries.filter(e => !curatedIds.has(e.id));
   const dupes = entries.filter(e => curatedIds.has(e.id));
 
-  const body = $('#curate-modal-body');
+  const body = _cat$('#curate-modal-body');
   body.innerHTML = '';
 
   const summary = document.createElement('p');
@@ -499,20 +506,20 @@ function showCurateModal(ids) {
   ul.className = 'curate-list';
   for (const e of newOnes) {
     const li = document.createElement('li');
-    li.innerHTML = `<span class="curate-name">${esc(e.name)}</span>
+    li.innerHTML = `<span class="curate-name">${_catEsc(e.name)}</span>
       <span class="curate-detail">${e.category || ''} ${e.country || ''}</span>`;
     ul.appendChild(li);
   }
   for (const e of dupes) {
     const li = document.createElement('li');
     li.className = 'curate-dup';
-    li.innerHTML = `<span class="curate-name">${esc(e.name)}</span>
+    li.innerHTML = `<span class="curate-name">${_catEsc(e.name)}</span>
       <span class="curate-detail">already curated</span>`;
     ul.appendChild(li);
   }
   body.appendChild(ul);
 
-  show($('#curate-modal'));
+  _catShow(_cat$('#curate-modal'));
   _pendingCurate = newOnes;
 }
 
@@ -531,18 +538,18 @@ async function confirmCurate() {
       language: entry.language || 'en',
       lastTestResult: entry.lastTestResult || null,
     };
-    await idb.putSource(sourceRecord);
+    await _catIdb.putSource(sourceRecord);
     curatedIds.add(entry.id);
   }
 
   _pendingCurate = [];
   selected.clear();
-  hide($('#curate-modal'));
+  _catHide(_cat$('#curate-modal'));
   render();
 }
 
 function closeCurateModal() {
-  hide($('#curate-modal'));
+  _catHide(_cat$('#curate-modal'));
   _pendingCurate = [];
 }
 
@@ -581,8 +588,8 @@ async function loadDefaultCatalogue() {
 
     if (!confirm(`Load ${added} feeds from the default catalogue? (${entries.length - added} already present)`)) return;
 
-    await idb.putAllCatalogue(toAdd);
-    allEntries = await idb.getAllCatalogue();
+    await _catIdb.putAllCatalogue(toAdd);
+    allEntries = await _catIdb.getAllCatalogue();
     populateFilters();
     render();
   } catch (err) {
@@ -593,16 +600,16 @@ async function loadDefaultCatalogue() {
 // --- Delete ---
 
 async function deleteEntry(id) {
-  await idb.deleteCatalogueEntry(id);
+  await _catIdb.deleteCatalogueEntry(id);
   selected.delete(id);
-  allEntries = await idb.getAllCatalogue();
+  allEntries = await _catIdb.getAllCatalogue();
   render();
 }
 
 
 async function clearCatalogue() {
   if (!confirm('Clear entire catalogue? This cannot be undone.')) return;
-  await idb.clearCatalogue();
+  await _catIdb.clearCatalogue();
   allEntries = [];
   selected.clear();
   populateFilters();
@@ -615,14 +622,9 @@ function slugify(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
 }
 
-function esc(str) {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 // --- Event delegation ---
 
-els.container.addEventListener('click', (e) => {
+catEls.container.addEventListener('click', (e) => {
   const cb = e.target.closest('.cat-check');
   if (cb) {
     e.stopPropagation();
@@ -641,60 +643,76 @@ els.container.addEventListener('click', (e) => {
 });
 
 // Import bar
-$('#import-opml-btn').addEventListener('click', () => {
-  els.opmlPanel.classList.contains('hidden') ? show(els.opmlPanel) : hide(els.opmlPanel);
-  hide(els.addPanel);
+_cat$('#import-opml-btn').addEventListener('click', () => {
+  catEls.opmlPanel.classList.contains('hidden') ? _catShow(catEls.opmlPanel) : _catHide(catEls.opmlPanel);
+  _catHide(catEls.addPanel);
 });
-$('#add-feed-btn').addEventListener('click', () => {
-  els.addPanel.classList.contains('hidden') ? show(els.addPanel) : hide(els.addPanel);
-  hide(els.opmlPanel);
+_cat$('#add-feed-btn').addEventListener('click', () => {
+  catEls.addPanel.classList.contains('hidden') ? _catShow(catEls.addPanel) : _catHide(catEls.addPanel);
+  _catHide(catEls.opmlPanel);
 });
-$('#clear-cat-btn').addEventListener('click', clearCatalogue);
-$('#load-default-btn').addEventListener('click', loadDefaultCatalogue);
+_cat$('#clear-cat-btn').addEventListener('click', clearCatalogue);
+_cat$('#load-default-btn').addEventListener('click', loadDefaultCatalogue);
 
 // OPML panel
-$('#opml-parse-btn').addEventListener('click', parseOpml);
-$('#opml-cancel-btn').addEventListener('click', () => {
-  hide(els.opmlPanel);
-  hide(els.opmlResult);
+_cat$('#opml-parse-btn').addEventListener('click', parseOpml);
+_cat$('#opml-cancel-btn').addEventListener('click', () => {
+  _catHide(catEls.opmlPanel);
+  _catHide(catEls.opmlResult);
 });
-els.opmlFile.addEventListener('change', async () => {
-  if (els.opmlFile.files[0]) {
-    const text = await els.opmlFile.files[0].text();
-    els.opmlText.value = text;
+catEls.opmlFile.addEventListener('change', async () => {
+  if (catEls.opmlFile.files[0]) {
+    const text = await catEls.opmlFile.files[0].text();
+    catEls.opmlText.value = text;
   }
 });
 
 // Add panel
-$('#test-url-btn').addEventListener('click', testUrl);
-$('#confirm-add-btn').addEventListener('click', addFeed);
-$('#cancel-add-btn').addEventListener('click', () => {
-  hide(els.addPanel);
-  hide(els.urlTestResult);
+_cat$('#cat-test-url-btn').addEventListener('click', testUrl);
+_cat$('#cat-confirm-add-btn').addEventListener('click', addFeed);
+_cat$('#cat-cancel-add-btn').addEventListener('click', () => {
+  _catHide(catEls.addPanel);
+  _catHide(catEls.urlTestResult);
 });
 
 // Filters
-els.search.addEventListener('input', render);
-els.filterCategory.addEventListener('change', render);
-els.filterLanguage.addEventListener('change', render);
-els.filterStatus.addEventListener('change', render);
-if (els.sortBy) els.sortBy.addEventListener('change', render);
+catEls.search.addEventListener('input', render);
+catEls.filterCategory.addEventListener('change', render);
+catEls.filterLanguage.addEventListener('change', render);
+catEls.filterStatus.addEventListener('change', render);
+if (catEls.sortBy) catEls.sortBy.addEventListener('change', render);
 
 // Bulk actions
-els.selectAll.addEventListener('change', selectAllVisible);
-$('#bulk-test').addEventListener('click', bulkTest);
-$('#bulk-curate').addEventListener('click', () => showCurateModal([...selected]));
+catEls.selectAll.addEventListener('change', selectAllVisible);
+_cat$('#bulk-test').addEventListener('click', bulkTest);
+_cat$('#bulk-curate').addEventListener('click', () => showCurateModal([...selected]));
 
 // Curate modal
-$('#curate-confirm').addEventListener('click', confirmCurate);
-$('#curate-cancel').addEventListener('click', closeCurateModal);
-$('#curate-modal-close').addEventListener('click', closeCurateModal);
-$('#curate-modal').addEventListener('click', (e) => {
+_cat$('#curate-confirm').addEventListener('click', confirmCurate);
+_cat$('#curate-cancel').addEventListener('click', closeCurateModal);
+_cat$('#curate-modal-close').addEventListener('click', closeCurateModal);
+_cat$('#curate-modal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeCurateModal();
 });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeCurateModal();
 });
 
-// --- Start ---
-init();
+// --- Start (lazy SPA init) ---
+
+function initCataloguePanel() {
+  if (window.newsyShell && window.newsyShell.isInitialised('catalogue')) return;
+  if (window.newsyShell) window.newsyShell.markInitialised('catalogue');
+  catInit();
+}
+
+if (window.newsyShell) {
+  window.addEventListener('panel-activate', (e) => {
+    if (e.detail.panel === 'catalogue') initCataloguePanel();
+  });
+  if (window.newsyShell.currentPanel() === 'catalogue') initCataloguePanel();
+} else {
+  initCataloguePanel();
+}
+
+})(); // end IIFE

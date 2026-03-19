@@ -3,44 +3,47 @@
  * Primary data store: IndexedDB (via idb.js). Server is a read-only seed.
  */
 
-const API = window.NEWSY_API_BASE || window.location.origin;
-const idb = window.newsyIdb;
-const $ = (sel) => document.querySelector(sel);
-const show = (el) => el.classList.remove('hidden');
-const hide = (el) => el.classList.add('hidden');
+(function () {
+'use strict';
+
+const _srcAPI = window.NEWSY_API_BASE || window.location.origin;
+const _srcIdb = window.newsyIdb;
+const _src$ = (sel) => document.querySelector(sel);
+const _srcShow = (el) => el.classList.remove('hidden');
+const _srcHide = (el) => el.classList.add('hidden');
 
 let allSources = [];
 let categories = [];
 
 const els = {
-  container: $('#sources-container'),
-  loading: $('#loading'),
-  statsTotal: $('#stats-total'),
-  statsEnabled: $('#stats-enabled'),
-  filterCategory: $('#filter-category'),
-  filterStatus: $('#filter-status'),
-  filterVerdict: $('#filter-verdict'),
-  addPanel: $('#add-panel'),
-  addName: $('#add-name'),
-  addUrl: $('#add-url'),
-  addCategory: $('#add-category'),
-  addCountry: $('#add-country'),
-  urlTestResult: $('#url-test-result'),
-  configName: $('#config-name'),
-  configDownload: $('#config-download'),
-  configUpload: $('#config-upload'),
-  configFile: $('#config-file'),
+  container: _src$('#sources-container'),
+  loading: _src$('#src-loading'),
+  statsTotal: _src$('#stats-total'),
+  statsEnabled: _src$('#stats-enabled'),
+  filterCategory: _src$('#src-filter-category'),
+  filterStatus: _src$('#src-filter-status'),
+  filterVerdict: _src$('#src-filter-verdict'),
+  addPanel: _src$('#src-add-panel'),
+  addName: _src$('#src-add-name'),
+  addUrl: _src$('#src-add-url'),
+  addCategory: _src$('#src-add-category'),
+  addCountry: _src$('#src-add-country'),
+  urlTestResult: _src$('#src-url-test-result'),
+  configName: _src$('#config-name'),
+  configDownload: _src$('#config-download'),
+  configUpload: _src$('#config-upload'),
+  configFile: _src$('#config-file'),
 };
 
 // --- Data loading: idb-first, server-seed fallback ---
 
 async function loadSources() {
   try {
-    await idb.open();
-    allSources = await idb.getAllSources();
+    await _srcIdb.open();
+    allSources = await _srcIdb.getAllSources();
 
     if (allSources.length === 0) {
-      await idb.setMeta('configName', 'newsy-sources');
+      await _srcIdb.setMeta('configName', 'newsy-sources');
     }
     categories = deriveCategories(allSources);
 
@@ -50,6 +53,11 @@ async function loadSources() {
   } catch (err) {
     els.container.innerHTML = `<div class="status-message error">Failed to load sources: ${err.message}</div>`;
   }
+}
+
+function _srcEsc(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function deriveCategories(sources) {
@@ -94,7 +102,7 @@ function render() {
   // Remove existing cards
   els.container.querySelectorAll('.source-card').forEach(c => c.remove());
   els.container.querySelectorAll('.status-message.dynamic').forEach(c => c.remove());
-  hide(els.loading);
+  _srcHide(els.loading);
 
   if (filtered.length === 0) {
     const empty = document.createElement('div');
@@ -124,7 +132,7 @@ function createSourceCard(source) {
     <div class="source-body">
       <div class="source-main-row">
         <div class="source-title-wrap">
-          <div class="source-name">${esc(source.name)}</div>
+          <div class="source-name">${_srcEsc(source.name)}</div>
         </div>
         <div class="source-side-controls">
           <span class="verdict-badge verdict-${verdict}">${verdict}</span>
@@ -141,7 +149,7 @@ function createSourceCard(source) {
         </div>
       </div>
       <div class="source-meta-block">
-        <div class="source-url" title="${esc(source.rssUrl)}">${esc(source.rssUrl)}</div>
+        <div class="source-url" title="${_srcEsc(source.rssUrl)}">${_srcEsc(source.rssUrl)}</div>
         <div class="source-tags">
           <span class="tag tag-category">${source.category || 'news'}</span>
           <span class="tag tag-country">${source.country || '?'}</span>
@@ -162,9 +170,9 @@ function formatTestDetail(result) {
     parts.push(`<span>latest: ${result.freshnessHours}h ago</span>`);
   }
   if (result.responseTimeMs) parts.push(`<span>${result.responseTimeMs}ms</span>`);
-  if (result.feedTitle) parts.push(`<span>"${esc(result.feedTitle)}"</span>`);
+  if (result.feedTitle) parts.push(`<span>"${_srcEsc(result.feedTitle)}"</span>`);
   if (result.errors && result.errors.length > 0) {
-    parts.push(`<span style="color:var(--negative)">${esc(result.errors[0])}</span>`);
+    parts.push(`<span style="color:var(--negative)">${_srcEsc(result.errors[0])}</span>`);
   }
   return parts.join('');
 }
@@ -177,8 +185,8 @@ async function toggleSource(id) {
   if (source) {
     source.enabled = !source.enabled;
   }
-  await idb.putSource(source);
-  allSources = await idb.getAllSources();
+  await _srcIdb.putSource(source);
+  allSources = await _srcIdb.getAllSources();
   render();
   window.scrollTo(0, scrollY);
 }
@@ -186,8 +194,8 @@ async function toggleSource(id) {
 async function deleteSource(id) {
   if (!confirm('Remove this source?')) return;
   const scrollY = window.scrollY;
-  await idb.deleteSource(id);
-  allSources = await idb.getAllSources();
+  await _srcIdb.deleteSource(id);
+  allSources = await _srcIdb.getAllSources();
   render();
   window.scrollTo(0, scrollY);
 }
@@ -200,15 +208,15 @@ async function testSource(id) {
   try {
     const source = allSources.find(s => s.id === id);
     if (!source) return;
-    const res = await fetch(`${API}/api/test-feed`, {
+    const res = await fetch(`${_srcAPI}/api/test-feed`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: source.rssUrl }),
     });
     const result = await res.json();
     source.lastTestResult = result;
-    await idb.putSource(source);
-    allSources = await idb.getAllSources();
+    await _srcIdb.putSource(source);
+    allSources = await _srcIdb.getAllSources();
     render();
     window.scrollTo(0, scrollY);
   } finally {
@@ -220,13 +228,13 @@ async function testUrl() {
   const url = els.addUrl.value.trim();
   if (!url) return;
 
-  const btn = $('#test-url-btn');
+  const btn = _src$('#src-test-url-btn');
   btn.disabled = true;
   btn.textContent = 'testing...';
-  hide(els.urlTestResult);
+  _srcHide(els.urlTestResult);
 
   try {
-    const res = await fetch(`${API}/api/test-feed`, {
+    const res = await fetch(`${_srcAPI}/api/test-feed`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
@@ -235,7 +243,7 @@ async function testUrl() {
 
     els.urlTestResult.className = `test-result ${result.verdict || 'fail'}`;
     els.urlTestResult.innerHTML = formatUrlTestResult(result);
-    show(els.urlTestResult);
+    _srcShow(els.urlTestResult);
 
     // Auto-fill name if empty
     if (!els.addName.value && result.feedTitle) {
@@ -244,7 +252,7 @@ async function testUrl() {
   } catch (err) {
     els.urlTestResult.className = 'test-result fail';
     els.urlTestResult.textContent = `Error: ${err.message}`;
-    show(els.urlTestResult);
+    _srcShow(els.urlTestResult);
   } finally {
     btn.disabled = false;
     btn.textContent = 'test URL first';
@@ -254,7 +262,7 @@ async function testUrl() {
 function formatUrlTestResult(r) {
   const lines = [];
   lines.push(`verdict: ${r.verdict}  |  reachable: ${r.reachable}  |  parsable: ${r.parsable}`);
-  if (r.feedTitle) lines.push(`title: "${esc(r.feedTitle)}"`);
+  if (r.feedTitle) lines.push(`title: "${_srcEsc(r.feedTitle)}"`);
   lines.push(`items: ${r.itemCount}  |  response: ${r.responseTimeMs}ms`);
   if (r.freshnessHours !== null) lines.push(`latest item: ${r.freshnessHours}h ago`);
   if (r.quality) {
@@ -287,16 +295,16 @@ async function addNewSource() {
   };
 
   try {
-    await idb.putSource(record);
+    await _srcIdb.putSource(record);
 
     // Reset form
     els.addName.value = '';
     els.addUrl.value = '';
     els.addCountry.value = 'international';
-    hide(els.addPanel);
-    hide(els.urlTestResult);
+    _srcHide(els.addPanel);
+    _srcHide(els.urlTestResult);
 
-    allSources = await idb.getAllSources();
+    allSources = await _srcIdb.getAllSources();
     render();
   } catch (err) {
     alert(`Error: ${err.message}`);
@@ -311,7 +319,7 @@ function slugify(str) {
 
 async function downloadConfig() {
   await saveConfigName();
-  const config = await idb.exportConfig();
+  const config = await _srcIdb.exportConfig();
   const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -328,14 +336,14 @@ async function uploadConfig(file) {
     if (!incoming || !Array.isArray(incoming.sources)) {
       throw new Error('Invalid config: missing sources array');
     }
-    const current = await idb.exportConfig();
+    const current = await _srcIdb.exportConfig();
     const diff = diffConfigs(current.sources, incoming.sources);
     showDiffModal({
       title: `Load "${incoming.configName || file.name}"?`,
       diff,
       showActions: true,
       onConfirm: async () => {
-        await idb.importConfig(incoming);
+        await _srcIdb.importConfig(incoming);
         await reloadSourcesFromStore();
       },
       onMerge: diff.removed.length > 0 ? async () => {
@@ -348,13 +356,13 @@ async function uploadConfig(file) {
 }
 
 async function mergeIntoCurrent(incoming) {
-  const current = await idb.exportConfig();
+  const current = await _srcIdb.exportConfig();
   const merged = new Map((current.sources || []).map(s => [s.id, s]));
   for (const src of incoming.sources || []) {
     if (!src || !src.id) continue;
     merged.set(src.id, src);
   }
-  await idb.importConfig({
+  await _srcIdb.importConfig({
     configName: current.configName || 'newsy-sources',
     sources: Array.from(merged.values()),
   });
@@ -362,7 +370,7 @@ async function mergeIntoCurrent(incoming) {
 }
 
 async function reloadSourcesFromStore() {
-  allSources = await idb.getAllSources();
+  allSources = await _srcIdb.getAllSources();
   categories = deriveCategories(allSources);
   populateFilters();
   render();
@@ -409,11 +417,11 @@ let _diffCurrentMode = 'replace';
 let _diffBaseDiff = null;
 
 function showDiffModal({ title, diff, showActions, onConfirm, onMerge }) {
-  const modal    = $('#diff-modal');
-  const titleEl  = $('#diff-modal-title');
-  const footerEl = $('#diff-modal-footer');
-  const modeToggle = $('#diff-mode-toggle');
-  const confirmBtn = $('#diff-confirm');
+  const modal    = _src$('#diff-modal');
+  const titleEl  = _src$('#diff-modal-title');
+  const footerEl = _src$('#diff-modal-footer');
+  const modeToggle = _src$('#diff-mode-toggle');
+  const confirmBtn = _src$('#diff-confirm');
 
   titleEl.textContent = title;
   _diffBaseDiff = diff;
@@ -423,28 +431,28 @@ function showDiffModal({ title, diff, showActions, onConfirm, onMerge }) {
   if (confirmBtn) confirmBtn.textContent = onMerge ? 'apply changes' : 'load this config';
 
   if (showActions) {
-    show(footerEl);
+    _srcShow(footerEl);
     _diffOnConfirm = onConfirm;
     _diffOnMerge = onMerge || null;
     if (modeToggle) {
       if (onMerge) {
-        show(modeToggle);
+        _srcShow(modeToggle);
       } else {
-        hide(modeToggle);
+        _srcHide(modeToggle);
       }
     }
   } else {
-    hide(footerEl);
+    _srcHide(footerEl);
     _diffOnConfirm = null;
     _diffOnMerge = null;
-    if (modeToggle) hide(modeToggle);
+    if (modeToggle) _srcHide(modeToggle);
   }
 
   modal.classList.remove('hidden');
 }
 
 function closeDiffModal() {
-  $('#diff-modal').classList.add('hidden');
+  _src$('#diff-modal').classList.add('hidden');
   _diffOnConfirm = null;
   _diffOnMerge = null;
 }
@@ -456,7 +464,7 @@ function resetDiffModeRadios() {
 }
 
 function renderDiffWithMode() {
-  const bodyEl = $('#diff-modal-body');
+  const bodyEl = _src$('#diff-modal-body');
   if (!bodyEl || !_diffBaseDiff) return;
   if (_diffCurrentMode === 'preserve') {
     const filtered = {
@@ -478,7 +486,7 @@ function renderDiff({ added, removed, changed, same }) {
   const row = (cls, prefix, name, detail = '') =>
     `<div class="diff-row ${cls}">
       <span class="diff-prefix">${prefix}</span>
-      <span class="diff-row-name">${esc(name)}</span>
+      <span class="diff-row-name">${_srcEsc(name)}</span>
       ${detail ? `<span class="diff-row-detail">${detail}</span>` : ''}
     </div>`;
 
@@ -508,14 +516,14 @@ function renderDiff({ added, removed, changed, same }) {
 
 async function refreshConfigUI() {
   if (!els.configName) return;
-  const name = await idb.getMeta('configName') || 'newsy-sources';
+  const name = await _srcIdb.getMeta('configName') || 'newsy-sources';
   els.configName.value = name;
 }
 
 async function saveConfigName() {
   const name = els.configName.value.trim() || 'newsy-sources';
   els.configName.value = name;
-  await idb.setMeta('configName', name);
+  await _srcIdb.setMeta('configName', name);
 }
 
 // --- Event delegation ---
@@ -532,9 +540,13 @@ els.container.addEventListener('click', (e) => {
 });
 
 
-$('#cancel-add-btn').addEventListener('click', () => { hide(els.addPanel); hide(els.urlTestResult); });
-$('#test-url-btn').addEventListener('click', testUrl);
-$('#confirm-add-btn').addEventListener('click', addNewSource);
+const _srcAddBtn = _src$('#src-add-source-btn');
+if (_srcAddBtn) _srcAddBtn.addEventListener('click', () => {
+  els.addPanel.classList.contains('hidden') ? _srcShow(els.addPanel) : _srcHide(els.addPanel);
+});
+_src$('#src-cancel-add-btn').addEventListener('click', () => { _srcHide(els.addPanel); _srcHide(els.urlTestResult); });
+_src$('#src-test-url-btn').addEventListener('click', testUrl);
+_src$('#src-confirm-add-btn').addEventListener('click', addNewSource);
 els.filterCategory.addEventListener('change', render);
 els.filterStatus.addEventListener('change', render);
 els.filterVerdict.addEventListener('change', render);
@@ -548,10 +560,10 @@ if (els.configFile) els.configFile.addEventListener('change', (e) => {
   e.target.value = '';
 });
 
-$('#diff-modal-close').addEventListener('click', closeDiffModal);
-$('#diff-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeDiffModal(); });
-$('#diff-cancel').addEventListener('click', closeDiffModal);
-$('#diff-confirm').addEventListener('click', async () => {
+_src$('#diff-modal-close').addEventListener('click', closeDiffModal);
+_src$('#diff-modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeDiffModal(); });
+_src$('#diff-cancel').addEventListener('click', closeDiffModal);
+_src$('#diff-confirm').addEventListener('click', async () => {
   if (_diffCurrentMode === 'preserve' && _diffOnMerge) {
     await _diffOnMerge();
   } else if (_diffOnConfirm) {
@@ -571,10 +583,21 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeDiffModal();
 });
 
-function esc(str) {
-  if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// --- Init ---
+
+function initSourcesPanel() {
+  if (window.newsyShell && window.newsyShell.isInitialised('sources')) return;
+  if (window.newsyShell) window.newsyShell.markInitialised('sources');
+  loadSources();
 }
 
-// --- Init ---
-loadSources();
+if (window.newsyShell) {
+  window.addEventListener('panel-activate', (e) => {
+    if (e.detail.panel === 'sources') initSourcesPanel();
+  });
+  if (window.newsyShell.currentPanel() === 'sources') initSourcesPanel();
+} else {
+  initSourcesPanel();
+}
+
+})(); // end IIFE

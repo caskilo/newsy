@@ -5,6 +5,9 @@
  * Supports drag-to-group manual curation with reinforcement learning.
  */
 
+(function () {
+'use strict';
+
 const API_BASE = window.NEWSY_API_BASE || window.location.origin;
 const idb = window.newsyIdb;
 
@@ -214,11 +217,20 @@ function renderBrief(brief) {
   elements.metaCount.textContent = `${brief.articleCount} articles`;
   show(elements.meta);
 
-  // Render groups in a grid
-  if (groups.length > 0) {
+  // Partition: groups with 2+ sources become group cards; single-source groups
+  // are demoted to standalone articles so the group chrome is never shown alone.
+  const realGroups = groups.filter(g => g.sources.length >= 2);
+  const demotedArticles = groups
+    .filter(g => g.sources.length === 1)
+    .map(g => sourceToArticle(g.sources[0], g));
+
+  // Render multi-source groups in a grid.
+  // Each group also gets a set of hidden fallback article cards rendered after
+  // the grid — shown only when filtering reduces the group to <2 visible rows.
+  if (realGroups.length > 0) {
     const grid = document.createElement('div');
     grid.className = 'groups-grid';
-    for (const group of groups) {
+    for (const group of realGroups) {
       const el = createGroupCard(group);
       const flagged = group.sources.some(s => {
         const sourceIntensity = computeIntensity(s.emotionalScore, s.arousalScore);
@@ -228,14 +240,36 @@ function renderBrief(brief) {
       const groupPub = group.publishedRange?.latest || group.representative?.publishedAt || 0;
       const groupIntensity = computeIntensity(group.representative?.emotionalScore, group.representative?.arousalScore);
       setFilterData(el, group.domain, group.register, group.countryCode, group.headline + ' ' + group.sources.map(s => s.title).join(' '), flagged, groupPub, groupIntensity);
+      el.dataset.groupId = group.groupId;
       grid.appendChild(el);
       allItems.push({ type: 'group', data: group, el });
+
     }
+    // Grid goes first so groups always appear above standalone articles
     elements.container.appendChild(grid);
+
+    // Fallback cards appended after the grid — hidden until group demotion
+    for (const group of realGroups) {
+      for (const s of group.sources) {
+        const article = sourceToArticle(s, group);
+        const fallback = createArticleCard(article);
+        const autoIntensity = computeIntensity(article.emotionalScore, article.arousalScore);
+        const intensityFlagged = autoIntensity !== null && autoIntensity < -1.0;
+        const srcFlagged = (article.contentFlags || []).length > 0 || intensityFlagged;
+        setFilterData(fallback, article.domain, article.register, article.countryCode,
+          article.title + ' ' + (article.summary || '') + ' ' + (article.sourceName || ''),
+          srcFlagged, article.publishedAt || 0, autoIntensity);
+        fallback.dataset.articleId = article.id;
+        fallback.dataset.fallbackFor = group.groupId;
+        fallback.dataset.sourceArticleId = s.articleId;
+        fallback.style.display = 'none';
+        elements.container.appendChild(fallback);
+      }
+    }
   }
 
-  // Render standalone articles
-  for (const article of articles) {
+  // Render standalone articles (originals + demoted single-source groups)
+  for (const article of [...demotedArticles, ...articles]) {
     const el = createArticleCard(article);
     // Auto-flag extreme intensity articles (intensity < -1.0)
     const autoIntensity = computeIntensity(article.emotionalScore, article.arousalScore);
@@ -296,6 +330,9 @@ function createGroupCard(group) {
   for (const s of group.sources) {
     const row = document.createElement('div');
     row.className = 'group-article-row';
+    row.dataset.publishedAt = s.publishedAt || 0;
+    row.dataset.intensity = computeIntensity(s.emotionalScore, s.arousalScore) ?? '';
+    row.dataset.sourceArticleId = s.articleId;
     const chip = intensityChipHtml(s.emotionalScore, s.arousalScore, 'ga-intensity-chip');
     const gaTimeAgo = s.publishedAt ? formatTimeAgo(s.publishedAt) : '';
     row.innerHTML = `
@@ -310,6 +347,26 @@ function createGroupCard(group) {
 
   card.appendChild(articlesDiv);
   return card;
+}
+
+// ─── Promote a group source entry to an article-like object ───
+
+function sourceToArticle(source, group) {
+  return {
+    id:             source.articleId,
+    title:          source.title,
+    link:           source.link,
+    sourceName:     source.sourceName,
+    sourceId:       source.sourceName,
+    publishedAt:    source.publishedAt,
+    emotionalScore: source.emotionalScore,
+    arousalScore:   source.arousalScore,
+    contentFlags:   source.contentFlags || [],
+    domain:         group.domain,
+    register:       group.register,
+    countryCode:    group.countryCode,
+    summary:        source.summary || '',
+  };
 }
 
 // ─── Article card ───
@@ -585,7 +642,10 @@ function renderHistogram() {
 
 function applyFilters(options = {}) {
   const { skipHistogram = false } = options;
-  const items = elements.container.querySelectorAll('.story-group, .article-card');
+  // Exclude pre-rendered fallback cards — they are managed by the group demotion logic below
+  const items = elements.container.querySelectorAll(
+    '.story-group, .article-card:not([data-fallback-for])'
+  );
   const includeByType = { country: [], domain: [], register: [] };
   const excludeByType = { country: [], domain: [], register: [] };
   for (const f of activeFilters) {
@@ -635,11 +695,59 @@ function applyFilters(options = {}) {
     }
 
     el.style.display = visible ? '' : 'none';
+    if (!visible && el.classList.contains('story-group')) {
+      // Hide any fallback cards for this group so they don't persist from a prior filter state
+      const gid = el.dataset.groupId;
+      elements.container.querySelectorAll(`.article-card[data-fallback-for="${gid}"]`)
+        .forEach(fb => { fb.style.display = 'none'; });
+    }
     if (visible) {
       visibleCount++;
       // Find the matching allItems entry to get intensityScore
       const matched = allItems.find(i => i.el === el);
       if (matched) visibleItems.push(matched);
+
+      // Filter individual source rows inside visible groups; demote to article
+      // card if filtering leaves only one row visible.
+      if (el.classList.contains('story-group')) {
+        const rows = el.querySelectorAll('.group-article-row');
+        for (const row of rows) {
+          let rowVisible = true;
+          if (ageFilterMs > 0) {
+            const rPub = parseInt(row.dataset.publishedAt, 10);
+            if (rPub && (now - rPub) > ageFilterMs) rowVisible = false;
+          }
+          if (rowVisible && hasThreshold && row.dataset.intensity !== '') {
+            rowVisible = parseFloat(row.dataset.intensity) >= intensityThreshold;
+          }
+          row.style.display = rowVisible ? '' : 'none';
+        }
+
+        // If <2 rows remain visible, hide the group and show only the
+        // matching fallback article cards for visible rows instead.
+        // This is fully reversible: clearing the filter restores the group.
+        const visibleRows = Array.from(rows).filter(r => r.style.display !== 'none');
+        const groupId = el.dataset.groupId;
+        const fallbacks = elements.container.querySelectorAll(
+          `.article-card[data-fallback-for="${groupId}"]`
+        );
+        if (visibleRows.length >= 2) {
+          // Normal group: ensure fallbacks are hidden
+          fallbacks.forEach(fb => { fb.style.display = 'none'; });
+        } else if (visibleRows.length === 1) {
+          // Demote to single article card — hide the group, show only the
+          // fallback matching the surviving row
+          el.style.display = 'none';
+          const survivingId = visibleRows[0].dataset.sourceArticleId;
+          fallbacks.forEach(fb => {
+            fb.style.display = fb.dataset.sourceArticleId === survivingId ? '' : 'none';
+          });
+        } else {
+          // 0 rows visible — group is fully filtered; hide everything
+          el.style.display = 'none';
+          fallbacks.forEach(fb => { fb.style.display = 'none'; });
+        }
+      }
     }
   }
 
@@ -1202,10 +1310,28 @@ if (elements.dragToggleBtn) {
 
 // ─── Init ───
 
-elements.refreshBtn.addEventListener('click', () => fetchBrief(true));
-window.addEventListener('scroll', updateFilterBarPeek, { passive: true });
+function initBriefPanel() {
+  if (window.newsyShell && window.newsyShell.isInitialised('brief')) return;
+  if (window.newsyShell) window.newsyShell.markInitialised('brief');
 
-(async () => {
-  await restoreFilterState();
-  fetchBrief();
-})();
+  elements.refreshBtn.addEventListener('click', () => fetchBrief(true));
+  window.addEventListener('scroll', updateFilterBarPeek, { passive: true });
+
+  (async () => {
+    await restoreFilterState();
+    fetchBrief();
+  })();
+}
+
+// Lazy init via shell, or immediate if no shell (standalone)
+if (window.newsyShell) {
+  window.addEventListener('panel-activate', (e) => {
+    if (e.detail.panel === 'brief') initBriefPanel();
+  });
+  // If brief is already the current panel (default route), init now
+  if (window.newsyShell.currentPanel() === 'brief') initBriefPanel();
+} else {
+  initBriefPanel();
+}
+
+})(); // end IIFE

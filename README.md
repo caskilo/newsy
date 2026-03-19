@@ -2,7 +2,7 @@
 
 Newsy is a personal, privacy-first RSS reader. It curates your daily brief from RSS sources you choose, renders it as a compact grid of story groups and articles, and lets you read everything without leaving the page — no accounts, no tracking, no data collected anywhere.
 
-The client is a vanilla JS + CSS single-page app deployed as a static site. It is the complete user-facing product. A companion API service handles feed fetching and curation; sources are supplied by the client on each request, so the server holds no state about you.
+The client is a vanilla JS + CSS single-page app deployed as a static site. All three views — brief, sources, and catalogue — live inside a single `index.html` with horizontally sliding panels managed by hash routing (`#brief`, `#sources`, `#catalogue`). A companion API service handles feed fetching and curation; sources are supplied by the client on each request, so the server holds no state about you.
 
 ---
 
@@ -30,13 +30,13 @@ This means your configuration is yours alone: it survives page reloads and brows
 - **Intensity histogram** — a compact distribution view in the brief meta bar shows the whole corpus across the intensity range, with a draggable lower-bound slider for filtering out low-intensity items
 - **Brief age indicator** — a timestamp next to the refresh button shows when the brief was last fetched; auto-refreshes after one hour
 
-### Source management (`sources.html`)
+### Source management (`#sources`)
 - **Source cards** — toggle, test, or delete individual sources; each card shows category, country, and last test verdict
 - **Add source** — provide a name and RSS URL; the feed is tested before saving
 - **Config bar** — name your source configuration; download it as JSON; reload from a saved file
 - **Filter toolbar** — narrow sources by category, status, or test verdict
 
-### Catalogue (`catalogue.html`)
+### Catalogue (`#catalogue`)
 - **Default catalogue loader** — load the built-in `catalogue.json` straight into the browser store
 - **Browse and curate** — search, filter, sort, multi-select, and add feeds from the catalogue into your sources list
 - **Independent removal** — removing a source from the curated list does not delete it from the catalogue, so it can be re-added later
@@ -73,19 +73,19 @@ Then open `http://localhost:5000`. On first load the source list may be empty �
 ## Client files
 
 | File | Purpose |
-|------|---------|
-| `index.html` | Main brief page |
-| `sources.html` | Source management page |
-| `catalogue.html` | Feed catalogue — import, browse, curate |
-| `app.js` | Brief rendering, filtering, reader modal, histogram threshold filter, brief cache |
-| `sources.js` | Source management UI logic |
-| `catalogue.js` | Catalogue UI logic |
+|------|--------|
+| `index.html` | Unified SPA shell — shared header, three sliding panels, overlay modals |
+| `shell.js` | SPA navigation controller — hash routing, slide transitions, lazy panel init |
+| `app.js` | Brief panel — rendering, filtering, reader modal, histogram threshold, brief cache |
+| `sources.js` | Sources panel — source management UI logic |
+| `catalogue.js` | Catalogue panel — feed discovery, OPML import, curation |
 | `idb.js` | IndexedDB layer (sources, catalogue, meta, brief cache, UI preference state) |
 | `sources.default.js` | Curated default source list |
 | `api-config.js` | Resolves API base URL from meta tag at runtime |
-| `style.css` | Global typography and layout |
-| `sources.css` | Source page styles |
-| `catalogue.css` | Catalogue page styles |
+| `base.css` | Shared design tokens, typography, layout, buttons, forms, modals, SPA viewport |
+| `brief.css` | Brief panel styles (meta bar, histogram, article cards, groups, reader) |
+| `sources.css` | Sources panel styles (config bar, source cards, diff modal) |
+| `catalogue.css` | Catalogue panel styles (import bar, feed cards, curate modal) |
 
 ---
 

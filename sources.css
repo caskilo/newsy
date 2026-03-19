@@ -1,89 +1,13 @@
-/* Sources page specific styles */
-
-.nav-link {
-  color: var(--text);
-  text-decoration: none;
-}
-.nav-link:hover {
-  color: var(--accent);
-}
+/* ═══════════════════════════════════════════════
+   sources.css — styles specific to the sources panel.
+   Depends on base.css for tokens, buttons, forms,
+   toolbar, tags, modals, layout.
+   ═══════════════════════════════════════════════ */
 
 .header-actions {
   display: flex;
   gap: 8px;
   align-items: center;
-}
-
-.btn {
-  padding: 8px 16px;
-  border-radius: var(--radius);
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid var(--border);
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
-}
-.btn-primary:hover { opacity: 0.85; }
-
-.btn-secondary {
-  background: var(--surface);
-  color: var(--text-muted);
-}
-.btn-secondary:hover {
-  background: var(--surface-hover);
-  color: var(--text);
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--text-dim);
-  border-color: transparent;
-}
-.btn-ghost:hover { color: var(--text-muted); }
-
-.btn-sm {
-  padding: 4px 10px;
-  font-size: 0.72rem;
-}
-
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* Toolbar */
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 10px 14px;
-  background: var(--surface);
-  border-radius: var(--radius);
-}
-
-.filter-group {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.filter-group select {
-  background: var(--bg);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 5px 10px;
-  font-size: 0.75rem;
-  cursor: pointer;
 }
 
 .source-stats {
@@ -139,60 +63,6 @@
 .config-bar .btn {
   white-space: nowrap;
 }
-
-/* Add panel */
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px 20px;
-  margin-bottom: 16px;
-}
-
-.panel h3 {
-  font-size: 0.9rem;
-  font-weight: 500;
-  margin-bottom: 12px;
-  color: var(--text);
-}
-
-.form-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.input {
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 7px 12px;
-  font-size: 0.8rem;
-  flex: 1;
-  min-width: 120px;
-}
-
-.input-wide { flex: 3; }
-
-.input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.test-result {
-  margin-top: 10px;
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 0.78rem;
-  line-height: 1.5;
-  font-family: monospace;
-}
-
-.test-result.pass { background: rgba(63, 185, 80, 0.1); border: 1px solid var(--positive); color: var(--positive); }
-.test-result.warn { background: rgba(210, 153, 34, 0.1); border: 1px solid var(--warning); color: var(--warning); }
-.test-result.fail { background: rgba(248, 81, 73, 0.1); border: 1px solid var(--negative); color: var(--negative); }
 
 /* Source cards */
 .source-card {
@@ -355,21 +225,6 @@
   flex-shrink: 0;
 }
 
-.btn-icon-danger {
-  min-width: 32px;
-  padding: 4px 8px;
-  color: var(--text-dim);
-}
-
-.btn-icon-danger:hover {
-  color: var(--negative);
-  background: rgba(248, 81, 73, 0.08);
-  border-color: rgba(248, 81, 73, 0.2);
-}
-
-/* Spinner for testing */
-.testing { animation: spin 0.8s linear infinite; display: inline-block; }
-
 /* Config bar — info tooltip */
 .config-info-wrap {
   position: relative;
@@ -417,186 +272,14 @@
   display: block;
 }
 
-/* Diff modal */
-.diff-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.diff-modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  width: min(640px, 92vw);
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.diff-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.diff-modal-title {
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0;
-}
-
-.diff-close {
-  font-size: 1.3rem;
-  line-height: 1;
-  padding: 2px 6px;
-  color: var(--text-dim);
-}
-
-.diff-modal-body {
-  overflow-y: auto;
-  padding: 16px 20px;
-  flex: 1;
-}
-
-.diff-section-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  margin: 14px 0 6px;
-}
-
-.diff-section-label:first-child { margin-top: 0; }
-
-.diff-row {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 5px 8px;
-  border-radius: 5px;
-  font-size: 0.78rem;
-  margin-bottom: 3px;
-}
-
-.diff-row-name {
-  font-weight: 500;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.diff-row-detail {
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-
-.diff-added    { background: rgba(63,185,80,0.10); color: var(--positive); }
-.diff-removed  { background: rgba(248,81,73,0.10);  color: var(--negative); }
-.diff-changed  { background: rgba(210,153,34,0.10); color: var(--warning); }
-.diff-same     { color: var(--text-dim); }
-
-.diff-prefix {
-  font-weight: 700;
-  font-size: 0.8rem;
-  width: 14px;
-  flex-shrink: 0;
-}
-
-.diff-empty {
-  color: var(--text-dim);
-  font-size: 0.8rem;
-  font-style: italic;
-}
-
-.diff-modal-footer {
-  display: flex;
-  gap: 18px;
-  padding: 14px 20px;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  flex-wrap: wrap;
-}
-
-.diff-mode-toggle {
-  display: flex;
-  gap: 14px;
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  align-items: center;
-}
-
-.diff-mode-toggle label {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  cursor: pointer;
-}
-
-.diff-mode-toggle input[type="radio"] {
-  accent-color: var(--accent);
-}
-
-.diff-footer-actions {
-  display: flex;
-  gap: 10px;
-  margin-left: auto;
-}
-
-/* Action row in add panel */
-.form-row-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-add-confirm {
-  flex: 2;
-}
-
-.form-row-actions .btn:not(.btn-add-confirm) {
-  flex: 1;
-}
-
+/* ── Sources responsive ── */
 @media (max-width: 600px) {
-  /* Toolbar: two rows — filters on top, stats+add below */
-  .toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-
-  .filter-group {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .filter-group select {
-    flex: 1;
-    min-width: 0;
-  }
-
   .source-stats {
-    
     justify-content: space-between;
     width: 100%;
     padding: 0px 10px;
   }
 
-  /* Config bar: name full-width, then buttons in a row, ? bottom-right */
   .config-bar {
     flex-wrap: wrap;
     gap: 6px;
@@ -629,27 +312,6 @@
     width: min(260px, 85vw);
   }
 
-  /* Add panel: keep 3-row structure, stack each row's inputs */
-  .panel {
-    padding: 12px 14px;
-  }
-
-  .form-row {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .input, .input-wide {
-    width: 100%;
-    flex: unset;
-  }
-
-  /* Action row stays horizontal on mobile */
-  .form-row-actions {
-    flex-direction: row;
-  }
-
-  /* Source cards */
   .source-card {
     padding: 10px;
     gap: 8px;
@@ -667,27 +329,6 @@
 
   .source-actions {
     justify-content: flex-end;
-  }
-
-  /* Diff modal footer */
-  .diff-modal-footer {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .diff-mode-toggle {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .diff-footer-actions {
-    margin-left: 0;
-    width: 100%;
-  }
-
-  .diff-footer-actions .btn {
-    flex: 1;
   }
 
   .header-actions { flex-wrap: wrap; }
