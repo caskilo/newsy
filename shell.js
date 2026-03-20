@@ -67,10 +67,7 @@
     if (panel === currentPanel) return;
 
     const idx = PANELS.indexOf(panel);
-    // Get the actual panel viewport width (constrained by #app max-width)
-    const viewport = document.querySelector('.panel-viewport');
-    const viewportWidth = viewport ? viewport.offsetWidth : window.innerWidth;
-    track.style.transform = `translateX(-${idx * viewportWidth}px)`;
+    track.style.transform = `translateX(-${idx * strideX()}px)`;
 
     // Update header
     taglineEl.textContent = TAGLINES[panel];
@@ -85,16 +82,34 @@
 
     currentPanel = panel;
     showNav();
+    updatePagerDots(panel);
 
     // Fire custom event for lazy panel init
     window.dispatchEvent(new CustomEvent('panel-activate', { detail: { panel } }));
   }
 
+  // ── Pager dots ──
+
+  const pagerDotsBtn  = document.getElementById('pager-dots');
+  const pagerDotEls   = pagerDotsBtn ? pagerDotsBtn.querySelectorAll('.pager-dot') : [];
+
+  function updatePagerDots(panel) {
+    pagerDotEls.forEach(dot => {
+      dot.classList.toggle('active', dot.dataset.pager === panel);
+    });
+  }
+
+  if (pagerDotsBtn) {
+    pagerDotsBtn.addEventListener('click', () => {
+      showNav();
+    });
+  }
+
   // ── Swipe navigation ──
 
-  const SWIPE_THRESHOLD   = 40;   // px of horizontal travel required to commit
+  const SWIPE_THRESHOLD   = 80;   // px of horizontal travel required to commit
   const SWIPE_ANGLE_LIMIT = 0.7;  // |dy|/|dx| must be below this to count as horizontal
-  const DRAG_RESIST       = 0.18; // edge resistance factor (fraction of overscroll shown)
+  const DRAG_RESIST       = 0.18; // edge resistance factor at edges
 
   const viewport = document.querySelector('.panel-viewport');
   let touchStartX = 0, touchStartY = 0;
@@ -102,6 +117,20 @@
 
   function panelIndex() {
     return PANELS.indexOf(currentPanel);
+  }
+
+  // Read --panel-gap from CSS so stride stays in sync with CSS without hardcoding.
+  function panelGap() {
+    const raw = getComputedStyle(document.documentElement)
+      .getPropertyValue('--panel-gap').trim();
+    return parseFloat(raw) || 0;
+  }
+
+  // Distance the track must travel to show panel at idx.
+  // stride = viewportWidth + gap  (gap sits between panels, so each step is vw + gap)
+  function strideX() {
+    const vw  = viewport ? viewport.offsetWidth : window.innerWidth;
+    return vw + panelGap();
   }
 
   function setTrackX(px, animated) {
@@ -112,8 +141,7 @@
   }
 
   function committedX() {
-    const vw = viewport ? viewport.offsetWidth : window.innerWidth;
-    return -(panelIndex() * vw);
+    return -(panelIndex() * strideX());
   }
 
   if (viewport) {
@@ -134,9 +162,8 @@
         dragLive = true;
       }
 
-      const idx  = panelIndex();
-      const vw   = viewport.offsetWidth;
-      const base = -(idx * vw);
+      const idx     = panelIndex();
+      const base    = -(idx * strideX());
       const atLeft  = idx === 0;
       const atRight = idx === PANELS.length - 1;
 

@@ -591,6 +591,10 @@ footer p {
 .testing { animation: spin 0.8s linear infinite; display: inline-block; }
 
 /* ── SPA panel viewport ── */
+:root {
+  --panel-gap: 12px;
+}
+
 .panel-viewport {
   overflow: hidden;
   width: 100%;
@@ -601,6 +605,7 @@ footer p {
 
 .panel-track {
   display: flex;
+  column-gap: var(--panel-gap);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
   height: 100%;
@@ -613,6 +618,42 @@ footer p {
   overflow-y: auto;
   scroll-behavior: smooth;
   padding-bottom: 8px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  border: 1px solid var(--border);
+  border-bottom: none;
+}
+
+/* ── Pager dots ── */
+.pager-dots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: background 0.15s;
+}
+
+.pager-dots:hover {
+  background: var(--surface-hover);
+}
+
+.pager-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: background 0.2s, transform 0.2s, width 0.2s;
+  display: block;
+}
+
+.pager-dot.active {
+  background: var(--accent);
+  transform: scale(1.35);
+  width: 14px;
+  border-radius: 3px;
 }
 
 /* ── Bottom navigation bar ── */
