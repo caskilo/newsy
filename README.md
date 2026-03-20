@@ -1,9 +1,11 @@
-# newsy — a cosy cognitive prosthetic for news
+# $newsy$ - a cosy cognitive prosthetic for news
 
-Newsy is a personal, privacy-first RSS reader. It curates your daily brief from RSS sources you choose, renders it as a compact grid of story groups and articles, and lets you read everything without leaving the page — no accounts, no tracking, no data collected anywhere.
+Newsy is a deterministic, client-resident news aggregation engine that transforms
+high-volume RSS feeds into bounded, psychologically-aware daily briefings.
 
-The client is a vanilla JS + CSS single-page app deployed as a static site. All three views — brief, sources, and catalogue — live inside a single `index.html` with horizontally sliding panels managed by hash routing (`#brief`, `#sources`, `#catalogue`). A companion API service handles feed fetching and curation; sources are supplied by the client on each request, so the server holds no state about you.
+Newsy curates your daily brief from RSS sources you choose, renders it as a compact grid of story groups and articles. It also surfaces thematic and semantic groupings and tags to reduce topic-switching and cognitive load. Filters (inclusive or exclusive) can be added, as can a cutoff based on scored "intensity", which comes from a combination of semantic and tonal analysis.
 
+#### [View on Github Pages](https://caskilo.github.io/newsy/)
 ---
 
 ## Personalisation without a login
@@ -41,6 +43,10 @@ This means your configuration is yours alone: it survives page reloads and brows
 - **Browse and curate** — search, filter, sort, multi-select, and add feeds from the catalogue into your sources list
 - **Independent removal** — removing a source from the curated list does not delete it from the catalogue, so it can be re-added later
 
+### Coming Soon
+- **New styles** — a style-picker to adapt newsy's look to your liking
+- **Feedback page** — a space for people to share opinions, ideas, requests about newsy
+
 ---
 
 ## Privacy
@@ -53,39 +59,6 @@ This means your configuration is yours alone: it survives page reloads and brows
 | Config exports | Your device (JSON file you download) | You only |
 
 No cookies. No analytics. No login. No server-side source storage.
-
----
-
-## Getting started (local)
-
-```bash
-# Serve the client files (any static server will do)
-npx serve -l 5000
-# or: python -m http.server 5000
-```
-
-Then open `http://localhost:5000`. On first load the source list may be empty — add feeds manually, import a saved config, or open the catalogue page and use **load default** to seed the built-in catalogue before curating sources.
-
-`api-config.js` reads `localhost` and points the API at `http://localhost:3000`. In production (GitHub Pages) the API URL is injected at deploy time via a GitHub Actions environment variable — no URL is hardcoded in the source.
-
----
-
-## Client files
-
-| File | Purpose |
-|------|--------|
-| `index.html` | Unified SPA shell — shared header, three sliding panels, overlay modals |
-| `shell.js` | SPA navigation controller — hash routing, slide transitions, lazy panel init |
-| `app.js` | Brief panel — rendering, filtering, reader modal, histogram threshold, brief cache |
-| `sources.js` | Sources panel — source management UI logic |
-| `catalogue.js` | Catalogue panel — feed discovery, OPML import, curation |
-| `idb.js` | IndexedDB layer (sources, catalogue, meta, brief cache, UI preference state) |
-| `sources.default.js` | Curated default source list |
-| `api-config.js` | Resolves API base URL from meta tag at runtime |
-| `base.css` | Shared design tokens, typography, layout, buttons, forms, modals, SPA viewport |
-| `brief.css` | Brief panel styles (meta bar, histogram, article cards, groups, reader) |
-| `sources.css` | Sources panel styles (config bar, source cards, diff modal) |
-| `catalogue.css` | Catalogue panel styles (import bar, feed cards, curate modal) |
 
 ---
 
