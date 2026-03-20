@@ -687,6 +687,8 @@ footer p {
 
 /* ── Responsive base ── */
 @media (max-width: 600px) {
+  .bottom-nav { display: none; }
+
   #app { padding: 16px 12px; }
 
   .header-row {
