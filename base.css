@@ -35,15 +35,22 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
-  min-height: 100vh;
-  overflow-x: hidden;
+  height: 100vh;
+  overflow: hidden; /* page itself never scrolls — panels scroll internally */
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── SPA shell ── */
 #app {
   max-width: 720px;
+  width: 100%;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 24px 16px 0; /* bottom padding handled by bottom-nav */
+  flex: 1; /* fill remaining viewport height */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* ── Shared header ── */
@@ -587,7 +594,8 @@ footer p {
 .panel-viewport {
   overflow: hidden;
   width: 100%;
-  height: 100vh; /* Fixed viewport height */
+  flex: 1; /* fill all space between header and bottom-nav */
+  min-height: 0;
   position: relative;
 }
 
@@ -595,15 +603,76 @@ footer p {
   display: flex;
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
-  height: 100%; /* Track fills the viewport */
+  height: 100%;
 }
 
 .panel-slide {
   flex: 0 0 100%;
   max-width: 100%;
-  height: 100%; /* Each panel fills the track height */
+  height: 100%;
   overflow-y: auto;
   scroll-behavior: smooth;
+  padding-bottom: 8px;
+}
+
+/* ── Bottom navigation bar ── */
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  width: calc(100% - 48px);
+  max-width: 480px;
+  margin: 0 auto 6px;
+  background: rgba(22, 27, 34, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(48, 54, 61, 0.7);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255,255,255,0.04) inset;
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  will-change: transform, opacity;
+}
+
+.bottom-nav.is-hidden {
+  transform: translateY(calc(100% + 18px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 0;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  border-radius: 13px;
+  transition: color 0.15s, background 0.15s;
+  position: relative;
+}
+
+.bottom-nav-item:hover {
+  color: var(--text);
+}
+
+.bottom-nav-item.active {
+  color: var(--accent);
+  background: linear-gradient(
+    160deg,
+    rgba(88, 166, 255, 0.13) 0%,
+    rgba(88, 166, 255, 0.05) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(88, 166, 255, 0.18);
+}
+
+.bottom-nav-label {
+  position: relative;
+  z-index: 1;
 }
 
 /* Active nav link highlight */
@@ -627,9 +696,6 @@ footer p {
     padding: 0 8px;
   }
 
-  .panel-viewport {
-    height: 100vh; /* Smaller viewport on mobile */
-  }
   .header-left {
     gap: 4px;
   }
@@ -642,7 +708,6 @@ footer p {
     width: 32px;
     height: 32px;
   }
-  .header-link { margin-left: 0; }
   .brief-age { font-size: 0.7rem; }
   #refresh-btn {
     width: 28px;

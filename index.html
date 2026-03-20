@@ -23,8 +23,6 @@
         </div>
         <img src="newsy-logo.png" alt="newsy logo" class="header-logo">
         <div class="header-right">
-          <a href="#sources" class="header-link" data-nav="sources">sources</a>
-          <a href="#catalogue" class="header-link" data-nav="catalogue">catalogue</a>
           <span id="brief-age" class="brief-age"></span>
           <button id="refresh-btn" title="Fetch fresh brief">↻</button>
         </div>
@@ -151,8 +149,8 @@
         <section id="panel-catalogue" class="panel-slide">
           <!-- Import bar -->
           <div class="import-bar">
-            <button id="import-opml-btn" class="btn btn-primary btn-sm">import OPML</button>
-            <button id="add-feed-btn" class="btn btn-secondary btn-sm">add feed</button>
+            <button id="import-opml-btn" class="btn btn-primary btn-sm">add OPML</button>
+            <button id="add-feed-btn" class="btn btn-secondary btn-sm">add RSS</button>
             <button id="load-default-btn" class="btn btn-ghost btn-sm" title="Load the built-in default catalogue">load default</button>
             <span class="import-sep"></span>
             <span id="cat-stats" class="cat-stats"></span>
@@ -315,6 +313,19 @@
       </div>
     </div>
   </div>
+
+  <!-- ══ Bottom navigation bar ══ -->
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <a href="#brief" class="bottom-nav-item" data-nav="brief">
+      <span class="bottom-nav-label">brief</span>
+    </a>
+    <a href="#sources" class="bottom-nav-item" data-nav="sources">
+      <span class="bottom-nav-label">sources</span>
+    </a>
+    <a href="#catalogue" class="bottom-nav-item" data-nav="catalogue">
+      <span class="bottom-nav-label">catalogue</span>
+    </a>
+  </nav>
 
   <script src="api-config.js"></script>
   <script src="idb.js"></script>

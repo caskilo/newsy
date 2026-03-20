@@ -110,7 +110,8 @@ function startAgeTicker(cachedAt) {
 function updateFilterBarPeek() {
   if (!elements.filterBar || elements.filterBar.classList.contains('hidden')) return;
 
-  const currentScrollY = window.scrollY;
+  const scrollContainer = document.getElementById('panel-brief');
+  const currentScrollY = scrollContainer ? scrollContainer.scrollTop : window.scrollY;
   const delta = currentScrollY - lastScrollY;
 
   if (currentScrollY <= 0) {
@@ -1293,21 +1294,6 @@ async function restoreFilterState() {
   }
 }
 
-// ─── Drag mode toggle ───
-
-if (elements.dragToggleBtn) {
-  elements.dragToggleBtn.addEventListener('click', () => {
-    dragModeActive = !dragModeActive;
-    elements.dragToggleBtn.classList.toggle('active', dragModeActive);
-    elements.container.classList.toggle('drag-mode', dragModeActive);
-
-    const cards = elements.container.querySelectorAll('.article-card');
-    for (const card of cards) {
-      card.draggable = dragModeActive;
-    }
-  });
-}
-
 // ─── Init ───
 
 function initBriefPanel() {
@@ -1315,20 +1301,24 @@ function initBriefPanel() {
   if (window.newsyShell) window.newsyShell.markInitialised('brief');
 
   elements.refreshBtn.addEventListener('click', () => fetchBrief(true));
-  window.addEventListener('scroll', updateFilterBarPeek, { passive: true });
+
+  const briefPanel = document.getElementById('panel-brief');
+  if (briefPanel) {
+    lastScrollY = briefPanel.scrollTop || 0;
+    briefPanel.addEventListener('scroll', updateFilterBarPeek, { passive: true });
+  }
 
   (async () => {
     await restoreFilterState();
-    fetchBrief();
+    await fetchBrief(false);
   })();
 }
 
 // Lazy init via shell, or immediate if no shell (standalone)
 if (window.newsyShell) {
   window.addEventListener('panel-activate', (e) => {
-    if (e.detail.panel === 'brief') initBriefPanel();
+    if (e.detail?.panel === 'brief') initBriefPanel();
   });
-  // If brief is already the current panel (default route), init now
   if (window.newsyShell.currentPanel() === 'brief') initBriefPanel();
 } else {
   initBriefPanel();

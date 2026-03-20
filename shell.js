@@ -29,7 +29,28 @@
   const taglineEl    = document.getElementById('header-tagline');
   const refreshBtn   = document.getElementById('refresh-btn');
   const briefAgeEl   = document.getElementById('brief-age');
-  const navLinks     = document.querySelectorAll('[data-nav]');
+  const navLinks     = document.querySelectorAll('.bottom-nav-item[data-nav]');
+  const bottomNav    = document.querySelector('.bottom-nav');
+
+  // ── Bottom nav auto-hide ──
+  const NAV_HIDE_DELAY = 3000;
+  let navHideTimer = null;
+
+  function showNav() {
+    if (!bottomNav) return;
+    bottomNav.classList.remove('is-hidden');
+    clearTimeout(navHideTimer);
+    navHideTimer = setTimeout(hideNav, NAV_HIDE_DELAY);
+  }
+
+  function hideNav() {
+    if (!bottomNav) return;
+    bottomNav.classList.add('is-hidden');
+  }
+
+  ['mousemove', 'mousedown', 'touchstart', 'keydown', 'scroll'].forEach(evt => {
+    window.addEventListener(evt, showNav, { passive: true });
+  });
 
   // ── Public API ──
   window.newsyShell = {
@@ -63,6 +84,7 @@
     });
 
     currentPanel = panel;
+    showNav();
 
     // Fire custom event for lazy panel init
     window.dispatchEvent(new CustomEvent('panel-activate', { detail: { panel } }));
