@@ -729,6 +729,7 @@ footer p {
 /* ── Responsive base ── */
 @media (max-width: 600px) {
   .bottom-nav { display: none; }
+  .bottom-nav.is-peek { display: flex; }
 
   #app { padding: 16px 12px; }
 

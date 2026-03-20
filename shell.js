@@ -35,6 +35,7 @@
   // ── Bottom nav auto-hide ──
   const NAV_HIDE_DELAY = 3000;
   let navHideTimer = null;
+  let navPeekTimer = null;
 
   function showNav() {
     if (!bottomNav) return;
@@ -46,6 +47,16 @@
   function hideNav() {
     if (!bottomNav) return;
     bottomNav.classList.add('is-hidden');
+  }
+
+  function peekNav() {
+    if (!bottomNav) return;
+    bottomNav.classList.add('is-peek');
+    bottomNav.classList.remove('is-hidden');
+    clearTimeout(navPeekTimer);
+    navPeekTimer = setTimeout(() => {
+      bottomNav.classList.remove('is-peek');
+    }, NAV_HIDE_DELAY);
   }
 
   ['mousemove', 'mousedown', 'touchstart', 'keydown', 'scroll'].forEach(evt => {
@@ -101,7 +112,7 @@
 
   if (pagerDotsBtn) {
     pagerDotsBtn.addEventListener('click', () => {
-      showNav();
+      peekNav();
     });
   }
 
