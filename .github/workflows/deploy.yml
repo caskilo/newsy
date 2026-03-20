@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Inject API base URL
-        run: sed -i "s|__APIBASE__|${{ vars.APIBASE }}|g" index.html sources.html
+        run: sed -i "s|__APIBASE__|${{ vars.APIBASE }}|g" index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
