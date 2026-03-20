@@ -171,7 +171,7 @@ async function fetchBrief(forceRefresh = false) {
 
     const res = await fetch(`${API_BASE}/api/brief?${params}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: newsyHeaders(),
       body: JSON.stringify({ sources }),
     });
     if (!res.ok) throw new Error(`Server error: ${res.status}`);

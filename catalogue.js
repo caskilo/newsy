@@ -259,7 +259,7 @@ async function parseOpml() {
   try {
     const res = await fetch(`${_catAPI}/api/parse-opml`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: newsyHeaders(),
       body: JSON.stringify({ xml }),
     });
     const data = await res.json();
@@ -350,7 +350,7 @@ async function testUrl() {
   try {
     const res = await fetch(`${_catAPI}/api/test-feed`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: newsyHeaders(),
       body: JSON.stringify({ url }),
     });
     const result = await res.json();
@@ -428,7 +428,7 @@ async function testEntry(id) {
   try {
     const res = await fetch(`${_catAPI}/api/test-feed`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: newsyHeaders(),
       body: JSON.stringify({ url: entry.rssUrl }),
     });
     const result = await res.json();
@@ -460,7 +460,7 @@ async function bulkTest() {
       try {
         const res = await fetch(`${_catAPI}/api/test-feed`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: newsyHeaders(),
           body: JSON.stringify({ url: entry.rssUrl }),
         });
         const result = await res.json();

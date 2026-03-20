@@ -24,8 +24,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Inject API base URL
-        run: sed -i "s|__APIBASE__|${{ vars.APIBASE }}|g" index.html
+      - name: Inject API config
+        run: |
+          sed -i "s|__APIBASE__|${{ vars.APIBASE }}|g" index.html
+          sed -i "s|__APIKEY__|${{ secrets.NEWSY_API_KEY }}|g" index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

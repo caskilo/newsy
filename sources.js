@@ -210,7 +210,7 @@ async function testSource(id) {
     if (!source) return;
     const res = await fetch(`${_srcAPI}/api/test-feed`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: newsyHeaders(),
       body: JSON.stringify({ url: source.rssUrl }),
     });
     const result = await res.json();
@@ -236,7 +236,7 @@ async function testUrl() {
   try {
     const res = await fetch(`${_srcAPI}/api/test-feed`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: newsyHeaders(),
       body: JSON.stringify({ url }),
     });
     const result = await res.json();
