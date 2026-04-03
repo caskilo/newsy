@@ -606,39 +606,63 @@ function renderHistogram() {
   }).join('');
 
   const thresholdLabel = intensityThreshold === -Infinity ? 'all' : intensityThreshold.toFixed(2);
+  const thumbPct = Math.round(thresholdPct);
 
   el.innerHTML = `
-    <div class="hist-wrap" title="Intensity distribution — drag slider to filter">
+    <div class="hist-wrap" title="Intensity distribution — drag to filter" role="slider"
+         aria-label="Intensity threshold" aria-valuenow="${thumbPct}" aria-valuemin="0" aria-valuemax="100">
       <div class="hist-bars">${bars}</div>
       <div class="hist-slider-row">
-        <input type="range" class="hist-slider" min="0" max="100" step="1" value="${Math.round(thresholdPct)}"
-          aria-label="Intensity threshold">
+        <div class="hist-track">
+          <div class="hist-thumb" style="left:${thumbPct}%"></div>
+        </div>
         <span class="hist-label">&ge; ${thresholdLabel}</span>
       </div>
     </div>
   `;
 
-  const slider = el.querySelector('.hist-slider');
+  const wrap  = el.querySelector('.hist-wrap');
+  const track = el.querySelector('.hist-track');
+  const thumb = el.querySelector('.hist-thumb');
+  const label = el.querySelector('.hist-label');
 
-  slider.addEventListener('input', (e) => {
-    const pct = parseFloat(e.target.value) / 100;
+  function applyPct(pct) {
+    pct = Math.max(0, Math.min(1, pct));
     const raw = MIN + pct * (MAX - MIN);
     intensityThreshold = pct <= 0.01 ? -Infinity : Math.round(raw * 100) / 100;
-    el.querySelector('.hist-label').textContent = `\u2265 ${intensityThreshold === -Infinity ? 'all' : intensityThreshold.toFixed(2)}`;
-    // Recolour bars immediately
-    const bars = el.querySelectorAll('.hist-bar');
-    bars.forEach((b, i) => {
+    const displayPct = Math.round(pct * 100);
+    thumb.style.left = `${displayPct}%`;
+    wrap.setAttribute('aria-valuenow', displayPct);
+    label.textContent = `\u2265 ${intensityThreshold === -Infinity ? 'all' : intensityThreshold.toFixed(2)}`;
+    el.querySelectorAll('.hist-bar').forEach((b, i) => {
       const binMin = MIN + i * step;
       b.style.opacity = binMin >= (intensityThreshold === -Infinity ? MIN : intensityThreshold) ? '1' : '0.2';
     });
     applyFilters({ skipHistogram: true });
     saveFilterState();
+  }
+
+  function pctFromPointer(e) {
+    const rect = track.getBoundingClientRect();
+    return (e.clientX - rect.left) / rect.width;
+  }
+
+  let scrubbing = false;
+
+  wrap.addEventListener('pointerdown', (e) => {
+    scrubbing = true;
+    wrap.setPointerCapture(e.pointerId);
+    applyPct(pctFromPointer(e));
+    e.preventDefault();
   });
 
-  slider.addEventListener('change', () => {
-    applyFilters();
-    saveFilterState();
+  wrap.addEventListener('pointermove', (e) => {
+    if (!scrubbing) return;
+    applyPct(pctFromPointer(e));
   });
+
+  wrap.addEventListener('pointerup',     () => { scrubbing = false; });
+  wrap.addEventListener('pointercancel', () => { scrubbing = false; });
 }
 
 function applyFilters(options = {}) {
