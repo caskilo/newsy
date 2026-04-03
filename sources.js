@@ -596,4 +596,10 @@ if (window.newsyShell) {
   initSourcesPanel();
 }
 
+window.addEventListener('sources-updated', () => {
+  if (window.newsyShell && window.newsyShell.isInitialised('sources')) {
+    loadSources();
+  }
+});
+
 })(); // end IIFE

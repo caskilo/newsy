@@ -546,6 +546,7 @@ async function confirmCurate() {
   selected.clear();
   _catHide(_cat$('#curate-modal'));
   render();
+  window.dispatchEvent(new CustomEvent('sources-updated'));
 }
 
 function closeCurateModal() {

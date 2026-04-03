@@ -157,6 +157,7 @@
 
   if (viewport) {
     viewport.addEventListener('touchstart', (e) => {
+      if (e.target.closest('input[type="range"]')) return;
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
       dragLive = false;
