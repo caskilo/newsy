@@ -174,6 +174,23 @@ async function fetchBrief(forceRefresh = false) {
       headers: newsyHeaders(),
       body: JSON.stringify({ sources }),
     });
+    if (res.status === 429) {
+      // Server cooldown active — brief was generated recently; use IDB cache.
+      const cached = idb ? await idb.getCachedBrief() : null;
+      if (cached && cached.brief) {
+        currentBrief = cached.brief;
+      }
+      elements.refreshBtn.classList.remove('spinning');
+      if (currentBrief) {
+        hide(elements.loading);
+        hide(elements.empty);
+        hide(elements.footer);
+        clearContainer();
+        renderBrief(currentBrief);
+        startAgeTicker(cached?.cachedAt ?? Date.now());
+      }
+      return;
+    }
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
     currentBrief = await res.json();
